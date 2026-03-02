@@ -1,44 +1,77 @@
 import { useState, useEffect } from 'react'
-import { supabase } from './lib/supabase'
-import Auth from './components/Auth'
-import TransactionForm from './components/TransactionForm'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import { ThemeProvider } from './context/ThemeContext'
+import Sidebar from './components/Sidebar'
+import Login from './pages/Login'
+import Detallado from './pages/Detallado'
+import Evolucion from './pages/Evolucion'
+import Cargar from './pages/Cargar'
 
-export default function App() {
-  const [session, setSession] = useState(null)
-  const [loading, setLoading] = useState(true)
+function AppLayout() {
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setLoading(false)
-    })
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-    })
-
-    return () => subscription.unsubscribe()
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
   }, [])
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-  }
+  return (
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      <Sidebar />
+      <main style={{
+        flex: 1,
+        marginLeft: isMobile ? 0 : 'var(--sidebar-width)',
+        height: '100vh',
+        overflow: 'hidden',
+        transition: 'margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+        background: 'var(--bg-primary)',
+      }}>
+        <Routes>
+          <Route path="/detallado" element={<Detallado />} />
+          <Route path="/evolucion" element={<Evolucion />} />
+          <Route path="/cargar" element={<Cargar />} />
+          <Route path="*" element={<Navigate to="/detallado" replace />} />
+        </Routes>
+      </main>
+    </div>
+  )
+}
+
+function AuthGate() {
+  const { user, loading } = useAuth()
 
   if (loading) {
     return (
-      <div className="app">
-        <div className="loading-screen">
-          <div className="logo"><span>$</span> finanzas</div>
+      <div style={{
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--bg-primary)',
+        color: 'var(--text-muted)',
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>💰</div>
+          <div>Cargando...</div>
         </div>
       </div>
     )
   }
 
-  if (!session) {
-    return <Auth />
-  }
+  return user ? <AppLayout /> : <Login />
+}
 
-  return <TransactionForm user={session.user} onSignOut={handleSignOut} />
+export default function App() {
+  return (
+    <BrowserRouter>
+      <ThemeProvider>
+        <AuthProvider>
+          <AuthGate />
+        </AuthProvider>
+      </ThemeProvider>
+    </BrowserRouter>
+  )
 }
