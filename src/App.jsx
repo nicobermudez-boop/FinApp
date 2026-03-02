@@ -6,14 +6,13 @@ import Sidebar from './components/Sidebar'
 import Login from './pages/Login'
 import Detallado from './pages/Detallado'
 import Evolucion from './pages/Evolucion'
-import Cargar from './pages/Cargar'
+import Carga from './pages/Carga'
 
 function AppLayout() {
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
-    check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
@@ -30,10 +29,10 @@ function AppLayout() {
         background: 'var(--bg-primary)',
       }}>
         <Routes>
+          <Route path="/carga" element={<Carga />} />
           <Route path="/detallado" element={<Detallado />} />
           <Route path="/evolucion" element={<Evolucion />} />
-          <Route path="/cargar" element={<Cargar />} />
-          <Route path="*" element={<Navigate to="/detallado" replace />} />
+          <Route path="*" element={<Navigate to="/carga" replace />} />
         </Routes>
       </main>
     </div>
