@@ -64,13 +64,20 @@ export default function Evolucion() {
   const [excludeViajes, setExcludeViajes] = useState(false)
   const [excludeExtra, setExcludeExtra] = useState(false)
 
-  const currentYear = new Date().getFullYear()
-  const prevYear = currentYear - 1
+  const nowYear = new Date().getFullYear()
+  const [baseYear, setBaseYear] = useState(nowYear)
+  const compYear = baseYear - 1
+
+  const availableYears = useMemo(() => {
+    const years = new Set(transactions.map(t => new Date(t.date + 'T00:00:00').getFullYear()))
+    years.add(nowYear)
+    return [...years].sort((a, b) => b - a)
+  }, [transactions, nowYear])
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true)
-      const fromDate = `${prevYear}-01-01`
+      const fromDate = `${nowYear - 5}-01-01`
       const { data } = await supabase
         .from('transactions')
         .select('*, categories(name)')
@@ -98,7 +105,7 @@ export default function Evolucion() {
     // Aggregate by year-month
     const monthly = {}
     // Init all months for both years
-    for (const year of [prevYear, currentYear]) {
+    for (const year of [compYear, baseYear]) {
       for (let m = 0; m < 12; m++) {
         const key = `${year}-${String(m + 1).padStart(2, '0')}`
         monthly[key] = { income: 0, expense: 0 }
@@ -136,8 +143,8 @@ export default function Evolucion() {
     // Build chart data (12 months, each with current + prev year)
     const mData = MONTHS.map((label, i) => {
       const m = String(i + 1).padStart(2, '0')
-      const curKey = `${currentYear}-${m}`
-      const prevKey = `${prevYear}-${m}`
+      const curKey = `${baseYear}-${m}`
+      const prevKey = `${compYear}-${m}`
       const cur = monthly[curKey] || { income: 0, expense: 0 }
       const prev = monthly[prevKey] || { income: 0, expense: 0 }
 
@@ -149,25 +156,27 @@ export default function Evolucion() {
 
       return {
         name: label,
-        [currentYear]: Math.round(getValue(cur)),
-        [prevYear]: Math.round(getValue(prev)),
+        [baseYear]: Math.round(getValue(cur)),
+        [compYear]: Math.round(getValue(prev)),
       }
     })
 
     // Build cumulative data
+    const curMonthIdx = new Date().getMonth()
     let cumCur = 0, cumPrev = 0
-    const cData = mData.map(d => {
-      cumCur += d[currentYear]
-      cumPrev += d[prevYear]
+    const cData = mData.map((d, i) => {
+      cumPrev += d[compYear]
+      const future = baseYear === nowYear && i > curMonthIdx - 1
+      if (!future) cumCur += d[baseYear]
       return {
         name: d.name,
-        [currentYear]: Math.round(cumCur),
-        [prevYear]: Math.round(cumPrev),
+        [baseYear]: future ? null : Math.round(cumCur),
+        [compYear]: Math.round(cumPrev),
       }
     })
 
     return { monthlyData: mData, cumulativeData: cData }
-  }, [transactions, currency, view, excludeViajes, excludeExtra, currentYear, prevYear])
+  }, [transactions, currency, view, excludeViajes, excludeExtra, baseYear, compYear])
 
   const activeView = VIEWS.find(v => v.key === view)
 
@@ -190,7 +199,19 @@ export default function Evolucion() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
           <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.02em' }}>Evolución</h1>
-          <CurrencyToggle currency={currency} onChange={setCurrency} />
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <select value={baseYear} onChange={e => setBaseYear(Number(e.target.value))} style={{
+              padding: '6px 28px 6px 10px', background: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)',
+              color: 'var(--text-primary)', fontSize: 13, fontFamily: "'JetBrains Mono', monospace",
+              fontWeight: 600, cursor: 'pointer', outline: 'none', appearance: 'none',
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center',
+            }}>
+              {availableYears.map(y => <option key={y} value={y}>{y} vs {y-1}</option>)}
+            </select>
+            <CurrencyToggle currency={currency} onChange={setCurrency} />
+          </div>
         </div>
 
         {/* View toggle + filter chips */}
@@ -292,15 +313,15 @@ export default function Evolucion() {
                   wrapperStyle={{ fontSize: 12, color: 'var(--text-muted)' }}
                 />
                 <Bar
-                  dataKey={prevYear.toString()}
-                  name={prevYear.toString()}
+                  dataKey={compYear.toString()}
+                  name={compYear.toString()}
                   fill={activeView.colorLight}
                   opacity={0.35}
                   radius={[3, 3, 0, 0]}
                 />
                 <Bar
-                  dataKey={currentYear.toString()}
-                  name={currentYear.toString()}
+                  dataKey={baseYear.toString()}
+                  name={baseYear.toString()}
                   fill={activeView.color}
                   radius={[3, 3, 0, 0]}
                 />
@@ -312,7 +333,7 @@ export default function Evolucion() {
         {/* Cumulative line chart */}
         <div>
           <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>
-            {activeView.label} — Acumulado {currentYear}
+            {activeView.label} — Acumulado {baseYear}
           </h2>
           <div style={{ width: '100%', height: 280 }}>
             <ResponsiveContainer>
@@ -335,8 +356,8 @@ export default function Evolucion() {
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Line
                   type="monotone"
-                  dataKey={prevYear.toString()}
-                  name={prevYear.toString()}
+                  dataKey={compYear.toString()}
+                  name={compYear.toString()}
                   stroke={activeView.colorLight}
                   strokeWidth={2}
                   strokeOpacity={0.4}
@@ -345,12 +366,13 @@ export default function Evolucion() {
                 />
                 <Line
                   type="monotone"
-                  dataKey={currentYear.toString()}
-                  name={currentYear.toString()}
+                  dataKey={baseYear.toString()}
+                  name={baseYear.toString()}
                   stroke={activeView.color}
                   strokeWidth={2.5}
                   dot={{ fill: activeView.color, r: 3 }}
                   activeDot={{ r: 5 }}
+                  connectNulls={false}
                 />
               </LineChart>
             </ResponsiveContainer>

@@ -83,16 +83,19 @@ export default function Carga() {
         .eq('user_id', user.id)
         .order('sort_order')
 
-      // Sort nested data
+      // Sort nested data alphabetically
       const sorted = (cats || []).map(c => ({
         ...c,
         subcategories: (c.subcategories || [])
-          .sort((a, b) => a.sort_order - b.sort_order)
+          .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'))
           .map(s => ({
             ...s,
-            concepts: (s.concepts || []).sort((a, b) => a.sort_order - b.sort_order)
+            concepts: (s.concepts || []).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es'))
           }))
-      }))
+      })).sort((a, b) => {
+        if (a.type !== b.type) return a.type === 'expense' ? -1 : 1
+        return (a.name || '').localeCompare(b.name || '', 'es')
+      })
 
       setCategories(sorted)
 
@@ -129,8 +132,8 @@ export default function Carga() {
   const isV = cat?.name === 'Viajes'
   const iAmt = useMemo(() => (!amount || inst <= 1) ? null : Number(amount) / inst, [amount, inst])
 
-  // Auto-select single subcategory
-  useEffect(() => { if (subs.length === 1) setSubId(subs[0].id) }, [subs])
+  // Auto-select single subcategory (or auto-select for Viajes)
+  useEffect(() => { if (subs.length === 1 || isV) setSubId(subs[0]?.id || null) }, [subs, isV])
 
   // Income concept default subtype
   useEffect(() => {
@@ -180,7 +183,7 @@ export default function Carga() {
         conceptId: type === 'expense' ? conId : incomeConceptId,
         incomeConcept: type === 'income' ? incCon : null,
         incomeSubtype: type === 'income' ? incSub : null,
-        description: desc || (type === 'expense' ? (cons.find(c => c.id === conId)?.name || null) : (incCon || null)),
+        description: desc || null,
         paymentMethod: type === 'expense' ? pay : null,
         installments: type === 'expense' && pay === 'Crédito' ? inst : 1,
         person,
@@ -281,7 +284,12 @@ export default function Carga() {
                 </button>))}
             </div></div>
 
-          {subs.length > 1 && <div className="sec"><div className="sl">Subcategoría</div>
+          {isV && <div className="sec"><div className="sl">Destino del viaje</div>
+            <div className="dw"><span style={{ fontSize: 16 }}>📍</span>
+              <input className="di" type="text" placeholder="Ej: Disney, Europa, Mar del Plata..."
+                value={dest} onChange={e => setDest(e.target.value)} /></div></div>}
+
+          {!isV && subs.length > 1 && <div className="sec"><div className="sl">Subcategoría</div>
             <div className="pills">{subs.map(s => (
               <button key={s.id} className={`p ${subId === s.id ? 's' : ''}`}
                 onClick={() => { setSubId(s.id); setConId(null) }}>{s.name}</button>))}</div></div>}
@@ -290,11 +298,6 @@ export default function Carga() {
             <div className="pills">{cons.map(c => (
               <button key={c.id} className={`p ${conId === c.id ? 's' : ''}`}
                 onClick={() => setConId(c.id)}>{c.name}</button>))}</div></div>}
-
-          {isV && conId && <div className="sec"><div className="sl">Destino del viaje</div>
-            <div className="dw"><span style={{ fontSize: 16 }}>📍</span>
-              <input className="di" type="text" placeholder="Ej: Disney, Europa, Mar del Plata..."
-                value={dest} onChange={e => setDest(e.target.value)} /></div></div>}
 
           {conId && <div className="sec"><div className="sl">Medio de pago</div>
             <div className="pills">
