@@ -48,7 +48,7 @@ function AppLayout() {
 }
 
 function AuthGate() {
-  const { user, loading } = useAuth()
+  const { user, loading, isRecovery, setIsRecovery } = useAuth()
 
   if (loading) {
     return (
@@ -68,7 +68,15 @@ function AuthGate() {
     )
   }
 
-  return user ? <AppLayout /> : <Login />
+  if (!user) return <Login />
+
+  // If password recovery, redirect to settings
+  if (isRecovery) {
+    setIsRecovery(false)
+    return <Navigate to="/configuracion" replace />
+  }
+
+  return <AppLayout />
 }
 
 export default function App() {
