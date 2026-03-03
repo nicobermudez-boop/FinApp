@@ -4,9 +4,8 @@ import CurrencyToggle from '../components/CurrencyToggle'
 import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ComposedChart, Bar, Line, LabelList,
-  BarChart, Bar as HBar, Cell
 } from 'recharts'
-import { Loader2, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react'
+import { Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 
 const PERIODS = [
   { key: 'all', label: 'All' },
@@ -23,12 +22,10 @@ function getAmount(t, currency) {
   if (currency === 'USD') {
     if (t.amount_usd) return parseFloat(t.amount_usd)
     if (t.currency === 'USD') return parseFloat(t.amount) || 0
-    const r = parseFloat(t.exchange_rate)
-    return r ? (parseFloat(t.amount) || 0) / r : 0
+    const r = parseFloat(t.exchange_rate); return r ? (parseFloat(t.amount) || 0) / r : 0
   }
   if (t.currency === 'ARS') return parseFloat(t.amount) || 0
-  const r = parseFloat(t.exchange_rate)
-  return r ? (parseFloat(t.amount) || 0) * r : 0
+  const r = parseFloat(t.exchange_rate); return r ? (parseFloat(t.amount) || 0) * r : 0
 }
 
 function fmt(v, c) {
@@ -39,13 +36,10 @@ function fmtC(v, c) {
   if (v == null || isNaN(v)) return '\u2013'
   return new Intl.NumberFormat(c === 'USD' ? 'en-US' : 'es-AR', { style: 'currency', currency: c, minimumFractionDigits: 1, maximumFractionDigits: 1, notation: 'compact' }).format(v)
 }
-// Smart format: compact only if >= 100k (ARS) or >= 1k (USD)
 function fmtSmart(v, c) {
   if (v == null || isNaN(v)) return '\u2013'
-  const abs = Math.abs(v)
-  const threshold = c === 'USD' ? 1000 : 100000
-  if (abs >= threshold) return fmtC(v, c)
-  return fmt(v, c)
+  const abs = Math.abs(v); const th = c === 'USD' ? 1000 : 100000
+  return abs >= th ? fmtC(v, c) : fmt(v, c)
 }
 
 function CustomTooltip({ active, payload, label, currency }) {
@@ -74,9 +68,7 @@ function FilterDrawer({ title, items, selected, onToggle, icon }) {
     <div>
       <button onClick={() => setOpen(!open)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 12px', background: 'var(--bg-tertiary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontFamily: 'inherit' }}>
         <span style={{ fontSize: 14 }}>{icon}</span>
-        <span style={{ flex: 1, textAlign: 'left', fontSize: 13, color: count ? 'var(--color-accent)' : 'var(--text-muted)', fontWeight: count ? 600 : 400 }}>
-          {title} {count > 0 && `(${count})`}
-        </span>
+        <span style={{ flex: 1, textAlign: 'left', fontSize: 13, color: count ? 'var(--color-accent)' : 'var(--text-muted)', fontWeight: count ? 600 : 400 }}>{title} {count > 0 && `(${count})`}</span>
         <Icon size={14} style={{ color: 'var(--text-muted)' }} />
       </button>
       {open && (
@@ -108,18 +100,16 @@ export default function Gastos() {
   const [currency, setCurrency] = useState('ARS')
   const [period, setPeriod] = useState('ytd')
   const [excludeExtra, setExcludeExtra] = useState(false)
+  const [excludeViajes, setExcludeViajes] = useState(false)
   const [distGroup, setDistGroup] = useState('category')
+  const [tableGroup, setTableGroup] = useState('concept')
+  const [compareMode, setCompareMode] = useState('ya') // 'ya' or 'prev'
   const [filterCats, setFilterCats] = useState([])
   const [filterSubs, setFilterSubs] = useState([])
   const [filterCons, setFilterCons] = useState([])
-  const [expanded, setExpanded] = useState({})
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
-  }, [])
+  useEffect(() => { const c = () => setIsMobile(window.innerWidth < 768); window.addEventListener('resize', c); return () => window.removeEventListener('resize', c) }, [])
 
   useEffect(() => {
     ;(async () => {
@@ -153,20 +143,11 @@ export default function Gastos() {
     return concepts.filter(c => c.subcategory_id === filterSubs[0]).sort((a, b) => a.name.localeCompare(b.name, 'es'))
   }, [filterCats, filterSubs, concepts])
 
-  const toggleCat = (id) => {
-    setFilterCats(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-    setFilterSubs([])
-    setFilterCons([])
-  }
-  const toggleSub = (id) => {
-    setFilterSubs(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-    setFilterCons([])
-  }
-  const toggleCon = (id) => setFilterCons(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-  const toggleExpand = (key) => setExpanded(prev => ({ ...prev, [key]: !prev[key] }))
+  const toggleCat = (id) => { setFilterCats(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]); setFilterSubs([]); setFilterCons([]) }
+  const toggleSub = (id) => { setFilterSubs(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]); setFilterCons([]) }
+  const toggleCon = (id) => setFilterCons(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
 
-
-  const { kpis, barData, distData, drillData, catColors } = useMemo(() => {
+  const { kpis, barData, distData, tableData, catColors } = useMemo(() => {
     const now = new Date()
     const endDate = new Date(now.getFullYear(), now.getMonth(), 0)
     let startDate
@@ -184,7 +165,6 @@ export default function Gastos() {
 
     const totalM = (endDate.getFullYear() - startDate.getFullYear()) * 12 + endDate.getMonth() - startDate.getMonth() + 1
 
-    // Previous period + year ago
     let prevStart, prevEnd
     if (period === 'ytd' || period === 'all') {
       prevStart = new Date(startDate.getFullYear() - 1, startDate.getMonth(), 1)
@@ -198,7 +178,8 @@ export default function Gastos() {
 
     const inR = (t, s, e) => { const d = new Date(t.date + 'T00:00:00'); return d >= s && d <= e }
 
-    const expenses = transactions.filter(t => t.type === 'expense')
+    let expenses = transactions.filter(t => t.type === 'expense')
+    if (excludeViajes) expenses = expenses.filter(t => t.categories?.name !== 'Viajes')
     let incomes = transactions.filter(t => t.type === 'income')
     if (excludeExtra) incomes = incomes.filter(t => t.income_subtype !== 'extraordinario')
 
@@ -209,7 +190,6 @@ export default function Gastos() {
     const prevI = incomes.filter(t => inR(t, prevStart, prevEnd))
     const yaI = incomes.filter(t => inR(t, yaStart, yaEnd))
 
-    // Apply filters
     const applyF = (arr) => {
       let r = arr
       if (filterCats.length) r = r.filter(t => filterCats.includes(t.category_id))
@@ -227,29 +207,24 @@ export default function Gastos() {
     const yaTotalInc = yaI.reduce((s, t) => s + getAmount(t, currency), 0)
 
     const avgM = totalExp / (totalM || 1)
-    const prevAvgM = prevTotalExp / (totalM || 1)
-    const yaAvgM = yaTotalExp / (totalM || 1)
     const pctInc = totalInc > 0 ? (totalExp / totalInc * 100) : null
     const prevPctInc = prevTotalInc > 0 ? (prevTotalExp / prevTotalInc * 100) : null
     const yaPctInc = yaTotalInc > 0 ? (yaTotalExp / yaTotalInc * 100) : null
 
-    // Month buckets for bar chart
+    // Bar chart
     const months = []
     const d = new Date(startDate)
     while (d <= endDate) { months.push({ y: d.getFullYear(), m: d.getMonth() }); d.setMonth(d.getMonth() + 1) }
 
     const uniqCats = [...new Set(curE.map(t => t.category_id).filter(Boolean))]
-    const cCol = {}
-    uniqCats.forEach((id, i) => { cCol[id] = COLORS[i % COLORS.length] })
+    const cCol = {}; uniqCats.forEach((id, i) => { cCol[id] = COLORS[i % COLORS.length] })
 
     const bData = months.map(({ y, m }) => {
       const label = MONTHS_SHORT[m] + ' ' + String(y).slice(2)
-      const entry = { name: label }
-      let mTotal = 0
+      const entry = { name: label }; let mTotal = 0
       uniqCats.forEach(cid => {
         const a = curE.filter(t => { const td = new Date(t.date + 'T00:00:00'); return td.getFullYear() === y && td.getMonth() === m && t.category_id === cid }).reduce((s, t) => s + getAmount(t, currency), 0)
-        entry[catMap[cid]?.name || cid] = Math.round(a)
-        mTotal += a
+        entry[catMap[cid]?.name || cid] = Math.round(a); mTotal += a
       })
       entry._total = Math.round(mTotal)
       const mInc = curI.filter(t => { const td = new Date(t.date + 'T00:00:00'); return td.getFullYear() === y && td.getMonth() === m }).reduce((s, t) => s + getAmount(t, currency), 0)
@@ -257,7 +232,7 @@ export default function Gastos() {
       return entry
     })
 
-    // Distribution data (horizontal bars)
+    // Distribution
     const dMap = {}
     curE.forEach(t => {
       let key, name
@@ -271,69 +246,50 @@ export default function Gastos() {
     const distTotal = dData.reduce((s, d) => s + d.value, 0)
     dData.forEach(d => { d.pct = distTotal > 0 ? (d.value / distTotal * 100) : 0 })
 
-    // Drill-down table: Cat -> Sub -> Concept -> Description
-    const tree = {}
-    curE.forEach(t => {
-      const catName = catMap[t.category_id]?.name || 'Sin cat.'
-      const subName = subMap[t.subcategory_id]?.name || 'Sin sub.'
-      const conName = conMap[t.concept_id]?.name || 'Sin con.'
-      const desc = t.description || conName
-      const amt = getAmount(t, currency)
-      if (!tree[catName]) tree[catName] = {}
-      if (!tree[catName][subName]) tree[catName][subName] = {}
-      if (!tree[catName][subName][conName]) tree[catName][subName][conName] = {}
-      tree[catName][subName][conName][desc] = (tree[catName][subName][conName][desc] || 0) + amt
-    })
+    // Table data: group by tableGroup level
+    const buildGroup = (arr, incArr) => {
+      const gMap = {}
+      const incTotal = incArr.reduce((s, t) => s + getAmount(t, currency), 0)
+      arr.forEach(t => {
+        let key, name, parent
+        if (tableGroup === 'category') { key = t.category_id; name = catMap[t.category_id]?.name || '\u2013'; parent = '' }
+        else if (tableGroup === 'subcategory') { key = t.subcategory_id; name = subMap[t.subcategory_id]?.name || '\u2013'; parent = catMap[t.category_id]?.name || '\u2013' }
+        else if (tableGroup === 'concept') { key = t.concept_id; name = conMap[t.concept_id]?.name || '\u2013'; parent = subMap[t.subcategory_id]?.name || '\u2013' }
+        else { key = `${t.concept_id}||${t.description || conMap[t.concept_id]?.name || '(sin desc)'}`; name = t.description || conMap[t.concept_id]?.name || '(sin desc)'; parent = conMap[t.concept_id]?.name || '\u2013' }
+        if (!gMap[key]) gMap[key] = { name, parent, total: 0 }
+        gMap[key].total += getAmount(t, currency)
+      })
+      return { groups: gMap, incTotal }
+    }
 
-    // Also build YA tree for comparison
-    const yaTree = {}
-    yaE.forEach(t => {
-      const catName = catMap[t.category_id]?.name || 'Sin cat.'
-      const subName = subMap[t.subcategory_id]?.name || 'Sin sub.'
-      const conName = conMap[t.concept_id]?.name || 'Sin con.'
-      const desc = t.description || conName
-      const amt = getAmount(t, currency)
-      if (!yaTree[catName]) yaTree[catName] = {}
-      if (!yaTree[catName][subName]) yaTree[catName][subName] = {}
-      if (!yaTree[catName][subName][conName]) yaTree[catName][subName][conName] = {}
-      yaTree[catName][subName][conName][desc] = (yaTree[catName][subName][conName][desc] || 0) + amt
-    })
+    const cur = buildGroup(curE, curI)
+    const ya = buildGroup(yaE, yaI)
+    const prev = buildGroup(prevE, prevI)
 
-    // Convert tree to array
-    const sumObj = (obj) => Object.values(obj).reduce((s, v) => s + (typeof v === 'number' ? v : sumObj(v)), 0)
-    const drill = Object.keys(tree).sort((a, b) => sumObj(tree[b]) - sumObj(tree[a])).map(catName => {
-      const catTotal = sumObj(tree[catName])
-      const yaCatTotal = yaTree[catName] ? sumObj(yaTree[catName]) : 0
+    const tData = Object.entries(cur.groups).map(([key, row]) => {
+      const yaRow = ya.groups[key]; const prevRow = prev.groups[key]
+      const yaTotal = yaRow ? yaRow.total : 0; const prevTotal = prevRow ? prevRow.total : 0
+      const curPctI = totalInc > 0 ? (row.total / totalInc * 100) : 0
+      const yaPctI = yaTotalInc > 0 ? (yaTotal / yaTotalInc * 100) : 0
+      const prevPctI = prevTotalInc > 0 ? (prevTotal / prevTotalInc * 100) : 0
       return {
-        name: catName, total: catTotal, yaTotal: yaCatTotal, level: 0,
-        children: Object.keys(tree[catName]).sort((a, b) => sumObj(tree[catName][b]) - sumObj(tree[catName][a])).map(subName => {
-          const subTotal = sumObj(tree[catName][subName])
-          const yaSubTotal = yaTree[catName]?.[subName] ? sumObj(yaTree[catName][subName]) : 0
-          return {
-            name: subName, total: subTotal, yaTotal: yaSubTotal, level: 1,
-            children: Object.keys(tree[catName][subName]).sort((a, b) => sumObj(tree[catName][subName][b]) - sumObj(tree[catName][subName][a])).map(conName => {
-              const conTotal = sumObj(tree[catName][subName][conName])
-              const yaConTotal = yaTree[catName]?.[subName]?.[conName] ? sumObj(yaTree[catName][subName][conName]) : 0
-              return {
-                name: conName, total: conTotal, yaTotal: yaConTotal, level: 2,
-                children: Object.keys(tree[catName][subName][conName]).sort((a, b) => tree[catName][subName][conName][b] - tree[catName][subName][conName][a]).map(desc => {
-                  const descTotal = tree[catName][subName][conName][desc]
-                  const yaDescTotal = yaTree[catName]?.[subName]?.[conName]?.[desc] || 0
-                  return { name: desc, total: descTotal, yaTotal: yaDescTotal, level: 3, children: null }
-                })
-              }
-            })
-          }
-        })
+        ...row, total: Math.round(row.total),
+        pctIncome: totalInc > 0 ? (row.total / totalInc * 100).toFixed(1) : '\u2013',
+        yaTotal: Math.round(yaTotal), prevTotal: Math.round(prevTotal),
+        yaDiffPct: yaTotal > 0 ? ((row.total - yaTotal) / yaTotal * 100) : null,
+        yaDiffAbs: Math.round(row.total - yaTotal),
+        yaBps: Math.round((curPctI - yaPctI) * 100),
+        prevDiffPct: prevTotal > 0 ? ((row.total - prevTotal) / prevTotal * 100) : null,
+        prevDiffAbs: Math.round(row.total - prevTotal),
+        prevBps: Math.round((curPctI - prevPctI) * 100),
       }
-    })
+    }).sort((a, b) => b.total - a.total)
 
     return {
-      kpis: { totalExp, prevTotalExp, yaTotalExp, totalInc, prevTotalInc, yaTotalInc, avgM, prevAvgM, yaAvgM, pctInc, prevPctInc, yaPctInc },
-      barData: bData, distData: dData, drillData: drill, catColors: cCol,
+      kpis: { totalExp, prevTotalExp, yaTotalExp, totalInc, prevTotalInc, yaTotalInc, avgM, pctInc, prevPctInc, yaPctInc },
+      barData: bData, distData: dData, tableData: tData, catColors: cCol,
     }
-  }, [transactions, currency, period, excludeExtra, filterCats, filterSubs, filterCons, distGroup, catMap, subMap, conMap, categories, concepts, subcategories])
-
+  }, [transactions, currency, period, excludeExtra, excludeViajes, filterCats, filterSubs, filterCons, distGroup, tableGroup, catMap, subMap, conMap, categories, concepts, subcategories])
 
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10, color: 'var(--text-muted)' }}><Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /><span>Cargando...</span></div>
 
@@ -345,15 +301,10 @@ export default function Gastos() {
     fontSize: 12, fontWeight: active ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
   })
 
-  // Variation helpers
   const vPct = (cur, prev) => (!prev || prev === 0) ? null : ((cur - prev) / Math.abs(prev)) * 100
   const vColor = (v, upBad) => v == null ? 'var(--text-dim)' : (v > 0 === upBad) ? 'var(--color-expense-light)' : 'var(--color-income)'
-  const fPct = (v) => v == null ? '' : `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`
-  const fBps = (cur, prev) => {
-    if (cur == null || prev == null) return '\u2013'
-    const diff = (cur - prev) * 100
-    return `${diff >= 0 ? '+' : ''}${Math.round(diff)}bps`
-  }
+  const fPct = (v) => v == null ? '\u2013' : `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`
+  const fBps = (cur, prev) => { if (cur == null || prev == null) return '\u2013'; const d = (cur - prev) * 100; return `${d >= 0 ? '+' : ''}${Math.round(d)}bps` }
 
   const TotalLabel = (props) => {
     const { x, y, width, value } = props
@@ -361,56 +312,11 @@ export default function Gastos() {
     return <text x={x + width / 2} y={y - 6} textAnchor="middle" fill="var(--text-muted)" fontSize={10} fontFamily="'JetBrains Mono', monospace">{fmtC(value, currency)}</text>
   }
 
-  // Drill-down row renderer
-  const renderDrillRow = (row, key, totalInc, yaTotalInc) => {
-    const indent = row.level * 20
-    const isExp = expanded[key]
-    const has = row.children && row.children.length > 0
-    const pctI = totalInc > 0 ? (row.total / totalInc * 100) : 0
-    const yaPctI = yaTotalInc > 0 ? (row.yaTotal / yaTotalInc * 100) : 0
-    const diffPct = row.yaTotal > 0 ? ((row.total - row.yaTotal) / Math.abs(row.yaTotal) * 100) : null
-    const diffAbs = row.total - row.yaTotal
-    const bps = Math.round((pctI - yaPctI) * 100)
-    const fontW = row.level === 0 ? 600 : row.level === 1 ? 500 : 400
-    const color = row.level === 0 ? 'var(--text-primary)' : row.level <= 2 ? 'var(--text-secondary)' : 'var(--text-muted)'
-
-    return (
-      <tr key={key} style={{ borderBottom: '1px solid var(--border-subtle)' }}
-        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
-        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-        <td style={{ padding: '6px 8px', paddingLeft: 8 + indent }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            {has ? (
-              <span onClick={() => toggleExpand(key)} style={{ cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
-                {isExp ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-              </span>
-            ) : <span style={{ width: 13 }} />}
-            <span style={{ fontWeight: fontW, color, fontSize: 12 }}>{row.name}</span>
-          </div>
-        </td>
-        <td style={{ padding: '6px 8px', fontSize: 12, fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', color: 'var(--color-expense-light)', fontWeight: fontW }}>{fmtSmart(row.total, currency)}</td>
-        <td style={{ padding: '6px 8px', fontSize: 12, fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', color: 'var(--text-muted)' }}>{pctI > 0 ? `${pctI.toFixed(1)}%` : '\u2013'}</td>
-        <td style={{ padding: '6px 8px', fontSize: 11, fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', color: vColor(diffAbs, true), fontWeight: 500 }}>
-          {diffPct != null ? fPct(diffPct) : '\u2013'}
-          {diffAbs !== 0 && <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>{diffAbs >= 0 ? '+' : ''}{fmtSmart(diffAbs, currency)}</div>}
-        </td>
-        <td style={{ padding: '6px 8px', fontSize: 11, fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', color: vColor(bps, true) }}>
-          {bps !== 0 ? `${bps >= 0 ? '+' : ''}${bps}` : '\u2013'}
-        </td>
-      </tr>
-    )
-  }
-
-  // Flatten drill-down with expansion
-  const flatDrill = []
-  const walkDrill = (rows, prefix) => {
-    rows.forEach((row, i) => {
-      const key = `${prefix}|${row.name}`
-      flatDrill.push({ row, key })
-      if (row.children && expanded[key]) walkDrill(row.children, key)
-    })
-  }
-  walkDrill(drillData, 'root')
+  const excludeBtnStyle = (active) => ({
+    display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 14px', borderRadius: 20, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', border: '1px solid',
+    ...(active ? { background: 'var(--color-expense-bg)', borderColor: 'var(--color-expense-border)', color: 'var(--color-expense-light)', textDecoration: 'line-through' }
+      : { background: 'var(--color-accent-bg)', borderColor: 'rgba(139,92,246,0.3)', color: 'var(--color-accent)' }),
+  })
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -426,13 +332,13 @@ export default function Gastos() {
               <button key={p.key} onClick={() => setPeriod(p.key)} style={{ padding: '5px 12px', borderRadius: 'var(--radius-sm)', border: 'none', background: period === p.key ? 'var(--color-accent)' : 'transparent', color: period === p.key ? '#fff' : 'var(--text-muted)', fontSize: 12, fontWeight: period === p.key ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit' }}>{p.label}</button>
             ))}
           </div>
-          <button onClick={() => setExcludeExtra(!excludeExtra)} style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 14px', borderRadius: 20, fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', border: '1px solid',
-            ...(excludeExtra ? { background: 'var(--color-expense-bg)', borderColor: 'var(--color-expense-border)', color: 'var(--color-expense-light)', textDecoration: 'line-through' } : { background: 'var(--color-accent-bg)', borderColor: 'rgba(139,92,246,0.3)', color: 'var(--color-accent)' }),
-          }}>💰 Extraordinarios</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => setExcludeViajes(!excludeViajes)} style={excludeBtnStyle(excludeViajes)}>✈️ Viajes</button>
+            <button onClick={() => setExcludeExtra(!excludeExtra)} style={excludeBtnStyle(excludeExtra)}>💰 Extraordinarios</button>
+          </div>
         </div>
 
-        {/* Conditional filters */}
+        {/* Conditional cascading filters */}
         {isMobile ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <FilterDrawer title="Categorías" icon="📂" items={categories} selected={filterCats} onToggle={toggleCat} />
@@ -443,24 +349,18 @@ export default function Gastos() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               <button onClick={() => { setFilterCats([]); setFilterSubs([]); setFilterCons([]) }} style={pillS(!filterCats.length)}>Todas</button>
-              {categories.map(c => (
-                <button key={c.id} onClick={() => toggleCat(c.id)} style={pillS(filterCats.includes(c.id))}>{c.icon} {c.name}</button>
-              ))}
+              {categories.map(c => <button key={c.id} onClick={() => toggleCat(c.id)} style={pillS(filterCats.includes(c.id))}>{c.icon} {c.name}</button>)}
             </div>
             {availableSubs.length > 0 && (
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 <button onClick={() => { setFilterSubs([]); setFilterCons([]) }} style={pillS(!filterSubs.length)}>Todas subs</button>
-                {availableSubs.map(s => (
-                  <button key={s.id} onClick={() => toggleSub(s.id)} style={pillS(filterSubs.includes(s.id))}>{s.name}</button>
-                ))}
+                {availableSubs.map(s => <button key={s.id} onClick={() => toggleSub(s.id)} style={pillS(filterSubs.includes(s.id))}>{s.name}</button>)}
               </div>
             )}
             {availableCons.length > 0 && (
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 <button onClick={() => setFilterCons([])} style={pillS(!filterCons.length)}>Todos conceptos</button>
-                {availableCons.map(c => (
-                  <button key={c.id} onClick={() => toggleCon(c.id)} style={pillS(filterCons.includes(c.id))}>{c.name}</button>
-                ))}
+                {availableCons.map(c => <button key={c.id} onClick={() => toggleCon(c.id)} style={pillS(filterCons.includes(c.id))}>{c.name}</button>)}
               </div>
             )}
           </div>
@@ -475,11 +375,11 @@ export default function Gastos() {
             <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: 6 }}>Total Gastos</div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 4 }}>
               <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--color-expense)' }}>{fmt(kpis.totalExp, currency)}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}>prom/mes {fmtC(kpis.avgM, currency)}</div>
+              <div style={{ fontSize: 11, color: 'var(--color-expense)', opacity: 0.55, fontFamily: "'JetBrains Mono', monospace" }}>prom/mes {fmtC(kpis.avgM, currency)}</div>
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.6 }}>
-              {kpis.yaTotalExp > 0 && <div>vs año ant: <span style={{ color: vColor(kpis.totalExp - kpis.yaTotalExp, true), fontWeight: 600 }}>{fPct(vPct(kpis.totalExp, kpis.yaTotalExp))}</span> <span style={{ color: 'var(--text-dim)' }}>({(kpis.totalExp - kpis.yaTotalExp) >= 0 ? '+' : ''}{fmtC(kpis.totalExp - kpis.yaTotalExp, currency)})</span></div>}
-              {kpis.prevTotalExp > 0 && <div>vs per. ant: <span style={{ color: vColor(kpis.totalExp - kpis.prevTotalExp, true), fontWeight: 600 }}>{fPct(vPct(kpis.totalExp, kpis.prevTotalExp))}</span> <span style={{ color: 'var(--text-dim)' }}>({(kpis.totalExp - kpis.prevTotalExp) >= 0 ? '+' : ''}{fmtC(kpis.totalExp - kpis.prevTotalExp, currency)})</span></div>}
+              {kpis.yaTotalExp > 0 && <div>vs año ant: <span style={{ color: vColor(kpis.totalExp - kpis.yaTotalExp, true), fontWeight: 600 }}>{fPct(vPct(kpis.totalExp, kpis.yaTotalExp))}</span> <span>({(kpis.totalExp - kpis.yaTotalExp) >= 0 ? '+' : ''}{fmtC(kpis.totalExp - kpis.yaTotalExp, currency)})</span></div>}
+              {kpis.prevTotalExp > 0 && <div>vs per. ant: <span style={{ color: vColor(kpis.totalExp - kpis.prevTotalExp, true), fontWeight: 600 }}>{fPct(vPct(kpis.totalExp, kpis.prevTotalExp))}</span> <span>({(kpis.totalExp - kpis.prevTotalExp) >= 0 ? '+' : ''}{fmtC(kpis.totalExp - kpis.prevTotalExp, currency)})</span></div>}
             </div>
           </div>
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 16 }}>
@@ -517,7 +417,7 @@ export default function Gastos() {
           </div>
         </div>
 
-        {/* Distribution (horizontal bars) + Drill-down table */}
+        {/* Distribution + Table */}
         <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'minmax(280px, 1fr) minmax(350px, 2fr)', gap: 16 }}>
           {/* Horizontal bars */}
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 20 }}>
@@ -544,22 +444,62 @@ export default function Gastos() {
             </div>
           </div>
 
-          {/* Drill-down table */}
+          {/* Table */}
           <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 20, overflow: 'hidden' }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 12 }}>Detalle</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)' }}>Detalle</div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: 3, background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-sm)', padding: 2 }}>
+                  {[{k:'category',l:'Cat'},{k:'subcategory',l:'Sub'},{k:'concept',l:'Con'},{k:'description',l:'Desc'}].map(o => (
+                    <button key={o.k} onClick={() => setTableGroup(o.k)} style={{ padding: '3px 10px', borderRadius: 4, border: 'none', background: tableGroup === o.k ? 'var(--color-accent)' : 'transparent', color: tableGroup === o.k ? '#fff' : 'var(--text-dim)', fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{o.l}</button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: 3, background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-sm)', padding: 2 }}>
+                  {[{k:'ya',l:'vs YA'},{k:'prev',l:'vs Per.'}].map(o => (
+                    <button key={o.k} onClick={() => setCompareMode(o.k)} style={{ padding: '3px 10px', borderRadius: 4, border: 'none', background: compareMode === o.k ? 'var(--color-accent)' : 'transparent', color: compareMode === o.k ? '#fff' : 'var(--text-dim)', fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{o.l}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
             <div style={{ overflow: 'auto', maxHeight: 500 }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--border-strong)' }}>
-                    <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'left' }}>Cat / Sub / Con / Desc</th>
+                    <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'left' }}>{tableGroup === 'category' ? 'Categoría' : tableGroup === 'subcategory' ? 'Subcategoría' : tableGroup === 'concept' ? 'Concepto' : 'Descripción'}</th>
                     <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'right' }}>Total</th>
                     <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'right' }}>% Ing.</th>
-                    <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'right' }}>vs YA</th>
+                    <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'right' }}>{compareMode === 'ya' ? '% vs YA' : '% vs Per.'}</th>
+                    <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'right' }}>{compareMode === 'ya' ? '$ vs YA' : '$ vs Per.'}</th>
                     <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'right' }}>bps</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {flatDrill.map(({ row, key }) => renderDrillRow(row, key, kpis.totalInc, kpis.yaTotalInc))}
+                  {tableData.map((r, i) => {
+                    const diffPct = compareMode === 'ya' ? r.yaDiffPct : r.prevDiffPct
+                    const diffAbs = compareMode === 'ya' ? r.yaDiffAbs : r.prevDiffAbs
+                    const bps = compareMode === 'ya' ? r.yaBps : r.prevBps
+                    return (
+                      <tr key={i} style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        <td style={{ padding: '6px 8px' }}>
+                          <div style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 500 }}>{r.name}</div>
+                          {r.parent && <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>{r.parent}</div>}
+                        </td>
+                        <td style={{ padding: '6px 8px', fontSize: 12, fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', color: 'var(--color-expense-light)' }}>{fmtSmart(r.total, currency)}</td>
+                        <td style={{ padding: '6px 8px', fontSize: 12, fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', color: 'var(--text-muted)' }}>{r.pctIncome}%</td>
+                        <td style={{ padding: '6px 8px', fontSize: 11, fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', color: vColor(diffAbs, true), fontWeight: 500 }}>
+                          {fPct(diffPct)}
+                        </td>
+                        <td style={{ padding: '6px 8px', fontSize: 11, fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', color: vColor(diffAbs, true) }}>
+                          {diffAbs !== 0 ? `${diffAbs >= 0 ? '+' : ''}${fmtSmart(diffAbs, currency)}` : '\u2013'}
+                        </td>
+                        <td style={{ padding: '6px 8px', fontSize: 11, fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', color: vColor(bps, true) }}>
+                          {bps !== 0 ? `${bps >= 0 ? '+' : ''}${bps}` : '\u2013'}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>

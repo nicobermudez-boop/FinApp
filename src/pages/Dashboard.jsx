@@ -247,7 +247,7 @@ export default function Dashboard() {
                   <div style={{ fontSize: 24, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: kpi.color, letterSpacing: '-0.02em' }}>
                     {fmt(kpi.value, currency)}
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'JetBrains Mono', monospace" }}>
+                  <div style={{ fontSize: 11, color: kpi.color, opacity: 0.55, fontFamily: "'JetBrains Mono', monospace" }}>
                     prom/mes {fmtCompact(kpi.avg, currency)}
                   </div>
                 </div>
