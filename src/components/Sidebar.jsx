@@ -14,6 +14,7 @@ import {
   Moon,
   Monitor,
   ClipboardList,
+  Settings,
 } from 'lucide-react'
 
 const navItems = [
@@ -21,6 +22,7 @@ const navItems = [
   { path: '/detallado', label: 'Detallado', icon: Table2, description: 'Gastos por concepto' },
   { path: '/evolucion', label: 'Evolución', icon: TrendingUp, description: 'Ingresos vs Gastos' },
   { path: '/historial', label: 'Historial', icon: ClipboardList, description: 'Ver y editar registros' },
+  { path: '/configuracion', label: 'Config', icon: Settings, description: 'Cotizaciones y ajustes' },
 ]
 
 const themeConfig = {
