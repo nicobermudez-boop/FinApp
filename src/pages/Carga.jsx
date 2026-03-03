@@ -180,7 +180,7 @@ export default function Carga() {
         conceptId: type === 'expense' ? conId : incomeConceptId,
         incomeConcept: type === 'income' ? incCon : null,
         incomeSubtype: type === 'income' ? incSub : null,
-        description: desc || null,
+        description: desc || (type === 'expense' ? (cons.find(c => c.id === conId)?.name || null) : (incCon || null)),
         paymentMethod: type === 'expense' ? pay : null,
         installments: type === 'expense' && pay === 'Crédito' ? inst : 1,
         person,
