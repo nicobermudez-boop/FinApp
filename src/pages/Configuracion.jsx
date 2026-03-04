@@ -548,10 +548,8 @@ function ImportTab({ user }) {
     setConcepts(conR.data || [])
     setPersons(perR.data || [])
     const rateMap = {}
-    const sortedRates = []
-    ;(ratesR.data || []).forEach(r => { rateMap[r.date] = parseFloat(r.rate); sortedRates.push({ date: r.date, rate: parseFloat(r.rate) }) })
-    sortedRates.sort((a, b) => a.date.localeCompare(b.date))
-    setExchangeRates({ map: rateMap, sorted: sortedRates })
+    ;(ratesR.data || []).forEach(r => { rateMap[r.date] = parseFloat(r.rate) })
+    setExchangeRates(rateMap)
   }
 
   const parseCSV = (text) => {
