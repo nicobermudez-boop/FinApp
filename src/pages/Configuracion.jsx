@@ -631,6 +631,9 @@ function ImportTab({ user }) {
       if (!fecha) errors.push('Fecha vacía')
       else if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) errors.push(`Fecha inválida: "${fecha}" (YYYY-MM-DD)`)
 
+      const isFutureDate = fecha && fecha > new Date().toISOString().slice(0, 10)
+      if (isFutureDate) warnings.push('Fecha futura — Cotización y Monto USD se completarán después')
+
       if (!tipo) errors.push('Tipo vacío')
       else if (!['Gasto', 'Ingreso'].includes(tipo)) errors.push(`Tipo inválido: "${tipo}" (Gasto/Ingreso)`)
 
@@ -662,11 +665,11 @@ function ImportTab({ user }) {
         if (cuotaN && isNaN(parseInt(cuotaN))) errors.push(`Cuota N no numérico: "${cuotaN}"`)
       }
 
-      // USD fields always required
-      if (!montoUsd) errors.push('Monto USD vacío')
+      // USD fields: required for past dates, optional for future
+      if (!montoUsd) { if (!isFutureDate) errors.push('Monto USD vacío') }
       else if (isNaN(parseFloat(montoUsd))) errors.push(`Monto USD no numérico: "${montoUsd}"`)
 
-      if (!cotizacion) errors.push('Cotización vacía')
+      if (!cotizacion) { if (!isFutureDate) errors.push('Cotización vacía') }
       else if (isNaN(parseFloat(cotizacion))) errors.push(`Cotización no numérico: "${cotizacion}"`)
       else if (parseFloat(cotizacion) <= 0) errors.push('Cotización debe ser mayor a 0')
 
