@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
+import { fetchAllTransactions } from '../lib/fetchAll'
 import CurrencyToggle from '../components/CurrencyToggle'
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
@@ -78,13 +79,8 @@ export default function Evolucion() {
     async function fetchData() {
       setLoading(true)
       const fromDate = `${nowYear - 5}-01-01`
-      const { data } = await supabase
-        .from('transactions')
-        .select('*, categories(name)')
-        .gte('date', fromDate)
-        .order('date', { ascending: true })
-
-      setTransactions(data || [])
+      const data = await fetchAllTransactions(null, { select: '*, categories(name)', gte: [['date', fromDate]], orderCol: 'date', orderAsc: true })
+      setTransactions(data)
       setLoading(false)
     }
     fetchData()

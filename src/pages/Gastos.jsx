@@ -294,16 +294,23 @@ export default function Gastos() {
       const curPctI = totalInc > 0 ? (row.total / totalInc * 100) : 0
       const yaPctI = yaTotalInc > 0 ? (yaTotal / yaTotalInc * 100) : 0
       const prevPctI = prevTotalInc > 0 ? (prevTotal / prevTotalInc * 100) : 0
+      const avg = row.total / (totalM || 1)
+      const yaAvg = yaTotal / (totalM || 1)
+      const prevAvg = prevTotal / (totalM || 1)
+      const yaBps = Math.round((curPctI - yaPctI) * 100)
+      const prevBps = Math.round((curPctI - prevPctI) * 100)
       return {
-        ...row, total: Math.round(row.total),
+        ...row, total: Math.round(row.total), avg: Math.round(avg),
         pctIncome: totalInc > 0 ? (row.total / totalInc * 100).toFixed(1) : '\u2013',
         yaTotal: Math.round(yaTotal), prevTotal: Math.round(prevTotal),
         yaDiffPct: yaTotal > 0 ? ((row.total - yaTotal) / yaTotal * 100) : null,
         yaDiffAbs: Math.round(row.total - yaTotal),
-        yaBps: Math.round((curPctI - yaPctI) * 100),
+        yaAvgDiffAbs: Math.round(avg - yaAvg),
+        yaBps, yaBpsImpact: totalInc > 0 ? Math.round(yaBps / 10000 * totalInc) : 0,
         prevDiffPct: prevTotal > 0 ? ((row.total - prevTotal) / prevTotal * 100) : null,
         prevDiffAbs: Math.round(row.total - prevTotal),
-        prevBps: Math.round((curPctI - prevPctI) * 100),
+        prevAvgDiffAbs: Math.round(avg - prevAvg),
+        prevBps, prevBpsImpact: totalInc > 0 ? Math.round(prevBps / 10000 * totalInc) : 0,
       }
     }).sort((a, b) => b.total - a.total)
 
@@ -329,9 +336,12 @@ export default function Gastos() {
   const fBps = (cur, prev) => { if (cur == null || prev == null) return '\u2013'; const d = (cur - prev) * 100; return `${d >= 0 ? '+' : ''}${Math.round(d)}bps` }
 
   const TotalLabel = (props) => {
-    const { x, y, width, value } = props
+    const { x, y, width, value, viewBox } = props
     if (!value) return null
-    return <text x={x + width / 2} y={y - 6} textAnchor="middle" fill="var(--text-muted)" fontSize={10} fontFamily="'JetBrains Mono', monospace">{fmtC(value, currency)}</text>
+    const chartTop = 10
+    const labelY = y - 6 < chartTop ? y + 14 : y - 6
+    const fill = y - 6 < chartTop ? '#fff' : 'var(--text-muted)'
+    return <text x={x + width / 2} y={labelY} textAnchor="middle" fill={fill} fontSize={10} fontFamily="'JetBrains Mono', monospace">{fmtC(value, currency)}</text>
   }
 
   const excludeBtnStyle = (active) => ({
@@ -433,7 +443,7 @@ export default function Gastos() {
                     {i === arr.length - 1 && <LabelList dataKey="_total" content={TotalLabel} position="top" />}
                   </Bar>
                 ))}
-                <Line yAxisId="right" type="monotone" dataKey="% Ingresos" stroke="rgba(239,68,68,0.5)" strokeWidth={2} dot={{ fill: 'rgba(239,68,68,0.7)', r: 3 }} label={{ position: 'top', fill: 'rgba(239,68,68,0.7)', fontSize: 10, fontFamily: "'JetBrains Mono', monospace", formatter: v => `${v}%` }} />
+                <Line yAxisId="right" type="monotone" dataKey="% Ingresos" stroke="rgba(148,163,184,0.6)" strokeWidth={1.5} strokeDasharray="4 3" dot={{ fill: 'rgba(148,163,184,0.7)', r: 2 }} label={{ position: 'top', fill: 'rgba(148,163,184,0.8)', fontSize: 10, fontFamily: "'JetBrains Mono', monospace", formatter: v => `${v}%` }} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
@@ -488,18 +498,20 @@ export default function Gastos() {
                 <thead>
                   <tr style={{ borderBottom: '2px solid var(--border-strong)' }}>
                     <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'left' }}>{tableGroup === 'category' ? 'Categoría' : tableGroup === 'subcategory' ? 'Subcategoría' : tableGroup === 'concept' ? 'Concepto' : 'Descripción'}</th>
-                    <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'right' }}>Total</th>
+                    <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'right' }}>Total<br/><span style={{ fontWeight: 400, fontSize: 9, opacity: 0.7 }}>Prom/mes</span></th>
                     <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'right' }}>% Ing.</th>
                     <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'right' }}>{compareMode === 'ya' ? '% vs YA' : '% vs Per.'}</th>
-                    <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'right' }}>{compareMode === 'ya' ? '$ vs YA' : '$ vs Per.'}</th>
-                    <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'right' }}>bps</th>
+                    <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'right' }}>{compareMode === 'ya' ? '$ vs YA' : '$ vs Per.'}<br/><span style={{ fontWeight: 400, fontSize: 9, opacity: 0.7 }}>Prom/mes</span></th>
+                    <th style={{ padding: '6px 8px', fontSize: 10, fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', textAlign: 'right' }}>bps<br/><span style={{ fontWeight: 400, fontSize: 9, opacity: 0.7 }}>Impacto $</span></th>
                   </tr>
                 </thead>
                 <tbody>
                   {tableData.map((r, i) => {
                     const diffPct = compareMode === 'ya' ? r.yaDiffPct : r.prevDiffPct
                     const diffAbs = compareMode === 'ya' ? r.yaDiffAbs : r.prevDiffAbs
+                    const avgDiffAbs = compareMode === 'ya' ? r.yaAvgDiffAbs : r.prevAvgDiffAbs
                     const bps = compareMode === 'ya' ? r.yaBps : r.prevBps
+                    const bpsImpact = compareMode === 'ya' ? r.yaBpsImpact : r.prevBpsImpact
                     return (
                       <tr key={i} style={{ borderBottom: '1px solid var(--border-subtle)' }}
                         onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
@@ -508,16 +520,29 @@ export default function Gastos() {
                           <div style={{ fontSize: 12, color: 'var(--text-primary)', fontWeight: 500 }}>{r.name}</div>
                           {r.parent && <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>{r.parent}</div>}
                         </td>
-                        <td style={{ padding: '6px 8px', fontSize: 12, fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', color: 'var(--color-expense-light)' }}>{fmtSmart(r.total, currency)}</td>
+                        <td style={{ padding: '6px 8px', textAlign: 'right' }}>
+                          <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: 'var(--color-expense-light)' }}>{fmtSmart(r.total, currency)}</div>
+                          <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-dim)' }}>{fmtSmart(r.avg, currency)}</div>
+                        </td>
                         <td style={{ padding: '6px 8px', fontSize: 12, fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', color: 'var(--text-muted)' }}>{r.pctIncome}%</td>
                         <td style={{ padding: '6px 8px', fontSize: 11, fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', color: vColor(diffAbs, true), fontWeight: 500 }}>
                           {fPct(diffPct)}
                         </td>
-                        <td style={{ padding: '6px 8px', fontSize: 11, fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', color: vColor(diffAbs, true) }}>
-                          {diffAbs !== 0 ? `${diffAbs >= 0 ? '+' : ''}${fmtSmart(diffAbs, currency)}` : '\u2013'}
+                        <td style={{ padding: '6px 8px', textAlign: 'right' }}>
+                          <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: vColor(diffAbs, true) }}>
+                            {diffAbs !== 0 ? `${diffAbs >= 0 ? '+' : ''}${fmtSmart(diffAbs, currency)}` : '\u2013'}
+                          </div>
+                          <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: vColor(avgDiffAbs, true), opacity: 0.7 }}>
+                            {avgDiffAbs !== 0 ? `${avgDiffAbs >= 0 ? '+' : ''}${fmtSmart(avgDiffAbs, currency)}` : '\u2013'}
+                          </div>
                         </td>
-                        <td style={{ padding: '6px 8px', fontSize: 11, fontFamily: "'JetBrains Mono', monospace", textAlign: 'right', color: vColor(bps, true) }}>
-                          {bps !== 0 ? `${bps >= 0 ? '+' : ''}${bps}` : '\u2013'}
+                        <td style={{ padding: '6px 8px', textAlign: 'right' }}>
+                          <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: vColor(bps, true) }}>
+                            {bps !== 0 ? `${bps >= 0 ? '+' : ''}${bps}` : '\u2013'}
+                          </div>
+                          <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: vColor(bpsImpact, true), opacity: 0.7 }}>
+                            {bpsImpact !== 0 ? `${bpsImpact >= 0 ? '+' : ''}${fmtSmart(bpsImpact, currency)}` : '\u2013'}
+                          </div>
                         </td>
                       </tr>
                     )

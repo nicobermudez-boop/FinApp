@@ -174,6 +174,7 @@ export default function Dashboard() {
 
     return {
       kpis: {
+        months: numMonths,
         income: { value: curIncome, diff: curIncome - prevIncome, pct: variation(curIncome, prevIncome), yaDiff: curIncome - yaIncome, yaPct: variation(curIncome, yaIncome), avg: curIncome / numMonths },
         expense: { value: curExpense, diff: curExpense - prevExpense, pct: variation(curExpense, prevExpense), yaDiff: curExpense - yaExpense, yaPct: variation(curExpense, yaExpense), avg: curExpense / numMonths },
         savings: { value: curSavings, diff: curSavings - prevSavings, pct: variation(curSavings, prevSavings), yaDiff: curSavings - yaSavings, yaPct: variation(curSavings, yaSavings), avg: curSavings / numMonths },
@@ -183,9 +184,9 @@ export default function Dashboard() {
   }, [transactions, currency, period, excludeViajes, excludeExtra])
 
   const kpiCards = [
-    { label: 'Ingresos', ...kpis.income, color: 'var(--color-income)', upIsGood: true },
-    { label: 'Gastos', ...kpis.expense, color: 'var(--color-expense)', upIsGood: false },
-    { label: 'Ahorro', ...kpis.savings, color: 'var(--color-savings, #3b82f6)', upIsGood: true },
+    { label: 'Ingresos', ...kpis.income, color: 'var(--color-income)', upIsGood: true, months: kpis.months },
+    { label: 'Gastos', ...kpis.expense, color: 'var(--color-expense)', upIsGood: false, months: kpis.months },
+    { label: 'Ahorro', ...kpis.savings, color: 'var(--color-savings, #3b82f6)', upIsGood: true, months: kpis.months },
   ]
 
   if (loading) {
@@ -241,20 +242,32 @@ export default function Dashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 28 }}>
           {kpiCards.map(kpi => {
             const vc = (diff, up) => Math.abs(diff) < 0.01 ? 'var(--text-dim)' : (diff > 0 === up) ? 'var(--color-income)' : 'var(--color-expense)'
+            const avgDiff = compareMode === 'ya' ? (kpi.avg - (kpi.yaAvg || 0)) : (kpi.avg - (kpi.prevAvg || 0))
             return (
-              <div key={kpi.label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 20 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: 8 }}>{kpi.label}</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
-                  <div style={{ fontSize: 24, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: kpi.color, letterSpacing: '-0.02em' }}>
+              <div key={kpi.label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '16px 20px', display: 'flex', gap: 0 }}>
+                {/* Left: total + variations */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-muted)', marginBottom: 8 }}>{kpi.label}</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: kpi.color, letterSpacing: '-0.02em', marginBottom: 8 }}>
                     {fmt(kpi.value, currency)}
                   </div>
-                  <div style={{ fontSize: 11, color: kpi.color, opacity: 0.55, fontFamily: "'JetBrains Mono', monospace" }}>
-                    prom/mes {fmtCompact(kpi.avg, currency)}
+                  <div style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.7 }}>
+                    {kpi.yaPct !== null && <div>vs YA: <span style={{ color: vc(kpi.yaDiff, kpi.upIsGood), fontWeight: 600 }}>{kpi.yaPct >= 0 ? '+' : ''}{kpi.yaPct.toFixed(1)}%</span> <span style={{ color: vc(kpi.yaDiff, kpi.upIsGood) }}>({kpi.yaDiff >= 0 ? '+' : ''}{fmtCompact(kpi.yaDiff, currency)})</span></div>}
+                    {kpi.pct !== null && <div>vs Per: <span style={{ color: vc(kpi.diff, kpi.upIsGood), fontWeight: 600 }}>{kpi.pct >= 0 ? '+' : ''}{kpi.pct.toFixed(1)}%</span> <span style={{ color: vc(kpi.diff, kpi.upIsGood) }}>({kpi.diff >= 0 ? '+' : ''}{fmtCompact(kpi.diff, currency)})</span></div>}
                   </div>
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.7 }}>
-                  {kpi.yaPct !== null && <div>vs año ant: <span style={{ color: vc(kpi.yaDiff, kpi.upIsGood), fontWeight: 600 }}>{kpi.yaPct >= 0 ? '+' : ''}{kpi.yaPct.toFixed(1)}%</span> <span style={{ color: vc(kpi.yaDiff, kpi.upIsGood) }}>({kpi.yaDiff >= 0 ? '+' : ''}{fmtCompact(kpi.yaDiff, currency)})</span></div>}
-                  {kpi.pct !== null && <div>vs per. ant: <span style={{ color: vc(kpi.diff, kpi.upIsGood), fontWeight: 600 }}>{kpi.pct >= 0 ? '+' : ''}{kpi.pct.toFixed(1)}%</span> <span style={{ color: vc(kpi.diff, kpi.upIsGood) }}>({kpi.diff >= 0 ? '+' : ''}{fmtCompact(kpi.diff, currency)})</span></div>}
+                {/* Divider */}
+                <div style={{ width: 1, background: 'var(--border-subtle)', margin: '0 16px', flexShrink: 0 }} />
+                {/* Right: avg/mes */}
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-end', minWidth: 80 }}>
+                  <div style={{ fontSize: 9, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-dim)', marginBottom: 4 }}>Prom/mes</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)', marginBottom: 6 }}>
+                    {fmtCompact(kpi.avg, currency)}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.7, textAlign: 'right' }}>
+                    {kpi.yaPct !== null && <div style={{ color: vc(kpi.yaDiff, kpi.upIsGood) }}>YA {kpi.yaDiff >= 0 ? '+' : ''}{fmtCompact(kpi.yaDiff / (kpi.months || 1), currency)}</div>}
+                    {kpi.pct !== null && <div style={{ color: vc(kpi.diff, kpi.upIsGood) }}>Per {kpi.diff >= 0 ? '+' : ''}{fmtCompact(kpi.diff / (kpi.months || 1), currency)}</div>}
+                  </div>
                 </div>
               </div>
             )
