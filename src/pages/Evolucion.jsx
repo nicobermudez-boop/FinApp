@@ -32,6 +32,20 @@ function fmt(value, currency) {
   }).format(value)
 }
 
+function fmtLabel(value, currency) {
+  if (!value) return ''
+  const abs = Math.abs(value)
+  const sign = value < 0 ? '-' : ''
+  if (currency === 'USD') {
+    if (abs >= 1000000) return `${sign}$${(abs / 1000000).toFixed(1)}M`
+    if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(1)}k`
+    return `${sign}$${Math.round(abs)}`
+  }
+  if (abs >= 1000000) return `${sign}$${Math.round(abs / 1000000)}M`
+  if (abs >= 1000) return `${sign}$${Math.round(abs / 1000)}k`
+  return `${sign}$${Math.round(abs)}`
+}
+
 function CustomTooltip({ active, payload, label, currency }) {
   if (!active || !payload?.length) return null
   return (
@@ -314,12 +328,14 @@ export default function Evolucion() {
                   fill={activeView.colorLight}
                   opacity={0.35}
                   radius={[3, 3, 0, 0]}
+                  label={{ position: 'top', fill: 'var(--text-dim)', fontSize: 9, fontFamily: "'JetBrains Mono', monospace", formatter: v => v ? fmtLabel(v, currency) : '' }}
                 />
                 <Bar
                   dataKey={baseYear.toString()}
                   name={baseYear.toString()}
                   fill={activeView.color}
                   radius={[3, 3, 0, 0]}
+                  label={{ position: 'top', fill: 'var(--text-muted)', fontSize: 9, fontFamily: "'JetBrains Mono', monospace", formatter: v => v ? fmtLabel(v, currency) : '' }}
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -359,6 +375,7 @@ export default function Evolucion() {
                   strokeOpacity={0.4}
                   strokeDasharray="6 3"
                   dot={false}
+                  label={{ position: 'bottom', fill: 'var(--text-dim)', fontSize: 9, fontFamily: "'JetBrains Mono', monospace", formatter: v => v ? fmtLabel(v, currency) : '' }}
                 />
                 <Line
                   type="monotone"
@@ -369,6 +386,7 @@ export default function Evolucion() {
                   dot={{ fill: activeView.color, r: 3 }}
                   activeDot={{ r: 5 }}
                   connectNulls={false}
+                  label={{ position: 'top', fill: 'var(--text-muted)', fontSize: 9, fontFamily: "'JetBrains Mono', monospace", formatter: v => v ? fmtLabel(v, currency) : '' }}
                 />
               </LineChart>
             </ResponsiveContainer>

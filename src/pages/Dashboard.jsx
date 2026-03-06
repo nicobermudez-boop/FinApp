@@ -242,7 +242,8 @@ export default function Dashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 28 }}>
           {kpiCards.map(kpi => {
             const vc = (diff, up) => Math.abs(diff) < 0.01 ? 'var(--text-dim)' : (diff > 0 === up) ? 'var(--color-income)' : 'var(--color-expense)'
-            const avgDiff = compareMode === 'ya' ? (kpi.avg - (kpi.yaAvg || 0)) : (kpi.avg - (kpi.prevAvg || 0))
+            const yaAvgDiff = kpi.yaDiff / (kpi.months || 1)
+            const prevAvgDiff = kpi.diff / (kpi.months || 1)
             return (
               <div key={kpi.label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '16px 20px', display: 'flex', gap: 0 }}>
                 {/* Left: total + variations */}
@@ -264,9 +265,9 @@ export default function Dashboard() {
                   <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-muted)', marginBottom: 6 }}>
                     {fmtCompact(kpi.avg, currency)}
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-dim)', lineHeight: 1.7, textAlign: 'right' }}>
-                    {kpi.yaPct !== null && <div style={{ color: vc(kpi.yaDiff, kpi.upIsGood) }}>YA {kpi.yaDiff >= 0 ? '+' : ''}{fmtCompact(kpi.yaDiff / (kpi.months || 1), currency)}</div>}
-                    {kpi.pct !== null && <div style={{ color: vc(kpi.diff, kpi.upIsGood) }}>Per {kpi.diff >= 0 ? '+' : ''}{fmtCompact(kpi.diff / (kpi.months || 1), currency)}</div>}
+                  <div style={{ fontSize: 10, color: 'var(--text-dim)', lineHeight: 1.7, textAlign: 'right' }}>
+                    {kpi.yaPct !== null && <div style={{ color: vc(kpi.yaDiff, kpi.upIsGood) }}>YA {yaAvgDiff >= 0 ? '+' : ''}{fmtCompact(yaAvgDiff, currency)}</div>}
+                    {kpi.pct !== null && <div style={{ color: vc(kpi.diff, kpi.upIsGood) }}>Per {prevAvgDiff >= 0 ? '+' : ''}{fmtCompact(prevAvgDiff, currency)}</div>}
                   </div>
                 </div>
               </div>
