@@ -176,8 +176,9 @@ export default function Carga() {
 
   const valid = useMemo(() => {
     if (!amount || Number(amount) <= 0) return false
+    if (!person) return false
     return type === 'expense' ? conId !== null : incCon !== null
-  }, [amount, type, conId, incCon])
+  }, [amount, type, conId, incCon, person])
 
   const handleSubmit = async () => {
     if (!valid || saving) return
@@ -254,7 +255,7 @@ export default function Carga() {
     <div className="app">
       {/* HEADER */}
       <div className="hdr">
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 8 }}>
           {mepRate && <div className="mep">MEP <b>${Math.round(mepRate).toLocaleString('es-AR')}</b></div>}
         </div>
         <div className="ttgl" style={{ marginBottom: 12 }}>
@@ -265,22 +266,23 @@ export default function Carga() {
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <div style={{ flex: 1 }}>
-            <div className="sl">Fecha</div>
-            <input className="inp" type="date" value={date} onChange={e => setDate(e.target.value)}
-              style={{ width: '100%', fontSize: 13, padding: '9px 8px', boxSizing: 'border-box', height: 38 }} />
+            <div className="sl">Importe</div>
+            <div className="aw" style={{ height: 42 }}>
+              <span className="ap" style={{ fontSize: 14, left: 10 }}>{cur === 'ARS' ? '$' : 'U$'}</span>
+              <input ref={aRef} className="ai" style={{ fontSize: 18, padding: '10px 8px 10px 28px' }} type="text" inputMode="decimal" placeholder="0"
+                value={amount ? Number(amount.replace(/\./g,'')).toLocaleString('es-AR') : ''}
+                onChange={e => { const raw = e.target.value.replace(/[^0-9]/g, ''); setAmount(raw) }}
+                autoFocus enterKeyHint="done" onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }} />
+            </div>
           </div>
-          <div className="ct" style={{ flexShrink: 0, height: 38 }}>
+          <div className="ct" style={{ flexShrink: 0, height: 42 }}>
             <button className={`cb ${cur === 'ARS' ? 'on' : ''}`} onClick={() => setCur('ARS')}>ARS</button>
             <button className={`cb ${cur === 'USD' ? 'on' : ''}`} onClick={() => setCur('USD')}>USD</button>
           </div>
           <div style={{ flex: 1 }}>
-            <div className="sl">Importe</div>
-            <div className="aw" style={{ height: 38 }}>
-              <span className="ap" style={{ fontSize: 14, left: 10 }}>{cur === 'ARS' ? '$' : 'U$'}</span>
-              <input ref={aRef} className="ai" style={{ fontSize: 16, padding: '9px 8px 9px 28px' }} type="text" inputMode="decimal" placeholder="0"
-                value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} autoFocus
-                enterKeyHint="done" onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }} />
-            </div>
+            <div className="sl">Fecha</div>
+            <input className="inp" type="date" value={date} onChange={e => setDate(e.target.value)}
+              style={{ width: '100%', fontSize: 13, padding: '10px 8px', boxSizing: 'border-box', height: 42 }} />
           </div>
         </div>
       </div>
