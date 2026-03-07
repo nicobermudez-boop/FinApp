@@ -255,6 +255,10 @@ export default function Carga() {
     <div className="app">
       {/* HEADER */}
       <div className="hdr">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          {mepRate && <div className="mep">MEP <b>${Math.round(mepRate).toLocaleString('es-AR')}</b></div>}
+          {!mepRate && <div />}
+        </div>
         <div className="ttgl" style={{ marginBottom: 10 }}>
           <button className={`tb ${type === 'expense' ? 'ae' : ''}`}
             onClick={() => { setType('expense'); reset() }}>▼ Gasto</button>
@@ -262,38 +266,27 @@ export default function Carga() {
             onClick={() => { setType('income'); reset() }}>▲ Ingreso</button>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
-          <div className="aw" style={{ flex: '1 1 0', maxWidth: 200 }}>
-            <span className="ap" style={{ fontSize: 15 }}>{cur === 'ARS' ? '$' : 'U$'}</span>
-            <input ref={aRef} className="ai" style={{ fontSize: 18, padding: '10px 10px 10px 32px' }} type="text" inputMode="decimal" placeholder="0"
-              value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} autoFocus
-              enterKeyHint="done" onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }} />
+          <div style={{ flex: '0 0 auto' }}>
+            <div className="sl">Fecha</div>
+            <input className="inp" type="date" value={date} onChange={e => setDate(e.target.value)} style={{ fontSize: 12, padding: '8px 6px' }} />
           </div>
-          <div className="ct">
+          <div className="ct" style={{ flexShrink: 0 }}>
             <button className={`cb ${cur === 'ARS' ? 'on' : ''}`} onClick={() => setCur('ARS')}>ARS</button>
             <button className={`cb ${cur === 'USD' ? 'on' : ''}`} onClick={() => setCur('USD')}>USD</button>
           </div>
-          {mepRate && (
-            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '0 8px', fontSize: 10, fontFamily: "'JetBrains Mono', monospace", color: 'var(--f-txd)', lineHeight: 1.4 }}>
-              <span style={{ fontSize: 9, letterSpacing: '0.05em', opacity: 0.7 }}>MEP</span>
-              <span style={{ fontWeight: 700, color: 'var(--f-gr)', fontSize: 12 }}>${Math.round(mepRate).toLocaleString('es-AR')}</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="sl">Importe</div>
+            <div className="aw" style={{ height: 36 }}>
+              <span className="ap" style={{ fontSize: 14, left: 10 }}>{cur === 'ARS' ? '$' : 'U$'}</span>
+              <input ref={aRef} className="ai" style={{ fontSize: 16, padding: '8px 8px 8px 28px' }} type="text" inputMode="decimal" placeholder="0"
+                value={amount} onChange={e => setAmount(e.target.value.replace(/[^0-9.]/g, ''))} autoFocus
+                enterKeyHint="done" onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }} />
             </div>
-          )}
+          </div>
         </div>
       </div>
 
       <div className="fb">
-        {/* DATE + PERSON */}
-        <div className="sec">
-          <div className="row">
-            <div><div className="sl">Fecha</div>
-              <input className="inp" type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
-            <div><div className="sl">Quién</div>
-              <div className="pp">
-                {members.map(p => <button key={p.id} className={`pb ${person === p.id ? 's' : ''}`}
-                  onClick={() => setPerson(p.id)}>{p.name}</button>)}
-              </div></div>
-          </div>
-        </div>
 
         {/* EXPENSE */}
         {type === 'expense' && <>
@@ -389,6 +382,13 @@ export default function Carga() {
               ))}
             </div>
           )}</div>
+
+        {/* QUIÉN */}
+        <div className="sec"><div className="sl">Quién</div>
+          <div className="pp">
+            {members.map(p => <button key={p.id} className={`pb ${person === p.id ? 's' : ''}`}
+              onClick={() => setPerson(p.id)}>{p.name}</button>)}
+          </div></div>
 
         {/* RECURRING */}
         <div className="sec">
