@@ -56,6 +56,7 @@ export default function Carga() {
   const [incCon, setIncCon] = useState(null)
   const [incSub, setIncSub] = useState('recurrente')
   const [desc, setDesc] = useState('')
+  const [topDescs, setTopDescs] = useState([])
   const [isRec, setIsRec] = useState(false)
   const [rFreq, setRFreq] = useState('monthly')
   const [rPer, setRPer] = useState(12)
@@ -137,6 +138,27 @@ export default function Carga() {
   // Auto-select single subcategory (or auto-select for Viajes)
   useEffect(() => { if (subs.length === 1 || isV) setSubId(subs[0]?.id || null) }, [subs, isV])
 
+  // Fetch top 5 descriptions for current cat+sub+concept combo
+  useEffect(() => {
+    if (!conId) { setTopDescs([]); return }
+    ;(async () => {
+      const { data } = await supabase
+        .from('transactions')
+        .select('description')
+        .eq('concept_id', conId)
+        .eq('user_id', user.id)
+        .not('description', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(100)
+      if (data) {
+        const counts = {}
+        data.forEach(t => { if (t.description) counts[t.description] = (counts[t.description] || 0) + 1 })
+        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([d]) => d)
+        setTopDescs(sorted)
+      }
+    })()
+  }, [conId, user.id])
+
   // Income concept default subtype
   useEffect(() => {
     if (incCon) {
@@ -185,7 +207,7 @@ export default function Carga() {
         conceptId: type === 'expense' ? conId : incomeConceptId,
         incomeConcept: type === 'income' ? incCon : null,
         incomeSubtype: type === 'income' ? incSub : null,
-        description: desc || null,
+        description: desc || cons.find(c => c.id === conId)?.name || incCon || null,
         paymentMethod: type === 'expense' ? pay : null,
         installments: type === 'expense' && pay === 'Crédito' ? inst : 1,
         person: members.find(m => m.id === person)?.name || null,
@@ -281,8 +303,13 @@ export default function Carga() {
         {type === 'expense' && <>
           <div className="sec"><div className="sl">Categoría</div>
             <div className="cg">
-              {expenseCats.map(c => (
-                <button key={c.id} className={`cc ${catId === c.id ? 's' : ''}`} onClick={() => selCat(c.id)}>
+              {catId ? (
+                <button className="cc s" onClick={() => selCat(catId)} style={{ position: 'relative' }}>
+                  <div className="ci">{cat?.icon || '📦'}</div><div className="cn">{cat?.name}</div>
+                  <span onClick={e => { e.stopPropagation(); setCatId(null); setSubId(null); setConId(null) }} style={{ position: 'absolute', top: 4, right: 6, fontSize: 12, color: 'var(--text-dim)', cursor: 'pointer', lineHeight: 1 }}>✕</span>
+                </button>
+              ) : expenseCats.map(c => (
+                <button key={c.id} className="cc" onClick={() => selCat(c.id)}>
                   <div className="ci">{c.icon || '📦'}</div><div className="cn">{c.name}</div>
                 </button>))}
             </div></div>
@@ -293,13 +320,19 @@ export default function Carga() {
                 value={dest} onChange={e => setDest(e.target.value)} /></div></div>}
 
           {!isV && subs.length > 1 && <div className="sec"><div className="sl">Subcategoría</div>
-            <div className="pills">{subs.map(s => (
-              <button key={s.id} className={`p ${subId === s.id ? 's' : ''}`}
+            <div className="pills">{subId ? (
+              <button className="p s" style={{ position: 'relative', paddingRight: 24 }}
+                onClick={() => { setSubId(null); setConId(null) }}>{sub?.name} <span style={{ position: 'absolute', right: 8, fontSize: 11, color: 'var(--text-dim)' }}>✕</span></button>
+            ) : subs.map(s => (
+              <button key={s.id} className="p"
                 onClick={() => { setSubId(s.id); setConId(null) }}>{s.name}</button>))}</div></div>}
 
           {cons.length > 0 && <div className="sec"><div className="sl">Concepto</div>
-            <div className="pills">{cons.map(c => (
-              <button key={c.id} className={`p ${conId === c.id ? 's' : ''}`}
+            <div className="pills">{conId ? (
+              <button className="p s" style={{ position: 'relative', paddingRight: 24 }}
+                onClick={() => setConId(null)}>{cons.find(c => c.id === conId)?.name} <span style={{ position: 'absolute', right: 8, fontSize: 11, color: 'var(--text-dim)' }}>✕</span></button>
+            ) : cons.map(c => (
+              <button key={c.id} className="p"
                 onClick={() => setConId(c.id)}>{c.name}</button>))}</div></div>}
 
           {conId && <div className="sec"><div className="sl">Medio de pago</div>
@@ -347,7 +380,18 @@ export default function Carga() {
         <div className="sec"><div className="sl">Descripción (opcional)</div>
           <input className="inp" type="text"
             placeholder={isV ? 'Ej: Hotel Marriott, Nafta ruta...' : 'Ej: Café Martinez, Cuota gym...'}
-            value={desc} onChange={e => setDesc(e.target.value)} /></div>
+            value={desc} onChange={e => setDesc(e.target.value)} />
+          {topDescs.length > 0 && !desc && (
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+              {topDescs.map(d => (
+                <button key={d} onClick={() => setDesc(d)} style={{
+                  padding: '4px 10px', borderRadius: 12, border: '1px solid var(--border-subtle)',
+                  background: 'var(--bg-tertiary)', color: 'var(--text-muted)', fontSize: 11,
+                  cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
+                }}>{d}</button>
+              ))}
+            </div>
+          )}</div>
 
         {/* RECURRING */}
         <div className="sec">

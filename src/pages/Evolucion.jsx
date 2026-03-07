@@ -41,8 +41,8 @@ function fmtLabel(value, currency) {
     if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(1)}k`
     return `${sign}$${Math.round(abs)}`
   }
-  if (abs >= 1000000) return `${sign}$${Math.round(abs / 1000000)}M`
-  if (abs >= 1000) return `${sign}$${Math.round(abs / 1000)}k`
+  if (abs >= 1000000) return `${sign}$${(abs / 1000000).toFixed(1)}M`
+  if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(1)}k`
   return `${sign}$${Math.round(abs)}`
 }
 
@@ -317,11 +317,10 @@ export default function Evolucion() {
                   tickLine={false}
                   tickFormatter={v => fmt(v, currency)}
                   width={65}
+                  domain={[0, dataMax => Math.round(dataMax * 1.15)]}
                 />
                 <Tooltip content={<CustomTooltip currency={currency} />} />
-                <Legend
-                  wrapperStyle={{ fontSize: 12, color: 'var(--text-muted)' }}
-                />
+                <Legend wrapperStyle={{ fontSize: 12, color: 'var(--text-muted)' }} />
                 <Bar
                   dataKey={compYear.toString()}
                   name={compYear.toString()}
@@ -363,13 +362,13 @@ export default function Evolucion() {
                   tickLine={false}
                   tickFormatter={v => fmt(v, currency)}
                   width={65}
+                  domain={[0, dataMax => Math.round(dataMax * 1.12)]}
                 />
                 <Tooltip content={<CustomTooltip currency={currency} />} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Line
                   type="monotone"
                   dataKey={compYear.toString()}
-                  name={compYear.toString()}
                   stroke={activeView.colorLight}
                   strokeWidth={2}
                   strokeOpacity={0.4}
