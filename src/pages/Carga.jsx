@@ -31,6 +31,19 @@ const fmt = (n, c = 'ARS') => {
     : `$ ${a.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
 }
 
+const fmtInput = (raw, currency) => {
+  if (!raw) return ''
+  if (currency === 'USD') {
+    const parts = raw.split('.')
+    const int = (parseInt(parts[0], 10) || 0).toString()
+    const formatted = int.replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F')
+    return parts.length > 1 ? formatted + ',' + parts[1] : formatted
+  }
+  const num = parseInt(raw, 10)
+  if (isNaN(num)) return ''
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F')
+}
+
 export default function Carga() {
   const { user } = useAuth()
   // Data from Supabase
@@ -270,13 +283,24 @@ export default function Carga() {
             <div className="aw" style={{ height: 42 }}>
               <span className="ap" style={{ fontSize: 14, left: 10 }}>{cur === 'ARS' ? '$' : 'U$'}</span>
               <input ref={aRef} className="ai" style={{ fontSize: 18, padding: '10px 8px 10px 28px' }} type="text" inputMode="decimal" placeholder="0"
-                value={amount ? Number(amount.replace(/\./g,'')).toLocaleString('es-AR') : ''}
-                onChange={e => { const raw = e.target.value.replace(/[^0-9]/g, ''); setAmount(raw) }}
+                value={fmtInput(amount, cur)}
+                onChange={e => {
+                  const val = e.target.value.replace(/[\u2009\u202F]/g, '')
+                  if (cur === 'USD') {
+                    let raw = val.replace(/[^\d.,]/g, '').replace(',', '.')
+                    const parts = raw.split('.')
+                    if (parts.length > 2) raw = parts[0] + '.' + parts.slice(1).join('')
+                    if (parts[1]?.length > 2) raw = parts[0] + '.' + parts[1].slice(0, 2)
+                    setAmount(raw)
+                  } else {
+                    setAmount(val.replace(/[^0-9]/g, ''))
+                  }
+                }}
                 autoFocus enterKeyHint="done" onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }} />
             </div>
           </div>
           <div className="ct" style={{ flexShrink: 0, height: 42 }}>
-            <button className={`cb ${cur === 'ARS' ? 'on' : ''}`} onClick={() => setCur('ARS')}>ARS</button>
+            <button className={`cb ${cur === 'ARS' ? 'on' : ''}`} onClick={() => { setCur('ARS'); setAmount(a => a.split('.')[0]) }}>ARS</button>
             <button className={`cb ${cur === 'USD' ? 'on' : ''}`} onClick={() => setCur('USD')}>USD</button>
           </div>
           <div style={{ flex: 1 }}>
