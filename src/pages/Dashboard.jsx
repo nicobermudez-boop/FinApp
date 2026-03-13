@@ -66,6 +66,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [currency, setCurrency] = useState('ARS')
   const [period, setPeriod] = useState('ytd')
+  const now0 = new Date()
+  const defYear = now0.getMonth() === 0 ? now0.getFullYear() - 1 : now0.getFullYear()
+  const defMonth = now0.getMonth() === 0 ? 11 : now0.getMonth() - 1
+  const [baseYear, setBaseYear] = useState(defYear)
+  const [baseMonthIdx, setBaseMonthIdx] = useState(defMonth)
   const [excludeViajes, setExcludeViajes] = useState(false)
   const [excludeExtra, setExcludeExtra] = useState(false)
 
@@ -84,8 +89,7 @@ export default function Dashboard() {
     if (excludeViajes) filtered = filtered.filter(t => t.categories?.name !== 'Viajes')
     if (excludeExtra) filtered = filtered.filter(t => t.income_subtype !== 'extraordinario')
 
-    const now = new Date()
-    const endDate = new Date(now.getFullYear(), now.getMonth(), 0)
+    const endDate = new Date(baseYear, baseMonthIdx + 1, 0)
     let startDate
 
     if (period === 'all') {
@@ -94,10 +98,10 @@ export default function Dashboard() {
         const minD = new Date(Math.min(...times))
         startDate = new Date(minD.getFullYear(), minD.getMonth(), 1)
       } else {
-        startDate = new Date(now.getFullYear(), 0, 1)
+        startDate = new Date(baseYear, 0, 1)
       }
     } else if (period === 'ytd') {
-      startDate = new Date(now.getFullYear(), 0, 1)
+      startDate = new Date(baseYear, 0, 1)
     } else {
       const m = { '1m': 1, '3m': 3, '6m': 6, '1y': 12 }[period]
       startDate = new Date(endDate.getFullYear(), endDate.getMonth() - m + 1, 1)
@@ -181,13 +185,33 @@ export default function Dashboard() {
       },
       chartData: buckets,
     }
-  }, [transactions, currency, period, excludeViajes, excludeExtra])
+  }, [transactions, currency, period, baseYear, baseMonthIdx, excludeViajes, excludeExtra])
 
   const kpiCards = [
     { label: 'Ingresos', ...kpis.income, color: 'var(--color-income)', upIsGood: true, months: kpis.months },
     { label: 'Gastos', ...kpis.expense, color: 'var(--color-expense)', upIsGood: false, months: kpis.months },
     { label: 'Ahorro', ...kpis.savings, color: 'var(--color-savings, #3b82f6)', upIsGood: true, months: kpis.months },
   ]
+
+  // Available years from transactions
+  const availableYears = useMemo(() => {
+    const years = new Set(transactions.map(t => new Date(t.date + 'T00:00:00').getFullYear()).filter(y => !isNaN(y)))
+    years.add(defYear)
+    return [...years].sort()
+  }, [transactions, defYear])
+
+  const maxMonth = baseYear === now0.getFullYear() ? now0.getMonth() - 1 : 11 // 0-indexed
+  const handleYearChange = (y) => {
+    setBaseYear(y)
+    const max = y === now0.getFullYear() ? now0.getMonth() - 1 : 11
+    if (baseMonthIdx > max) setBaseMonthIdx(max)
+  }
+
+  const selectStyle = {
+    padding: '5px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)',
+    background: 'var(--bg-tertiary)', color: 'var(--text-secondary)',
+    fontSize: 12, fontFamily: 'inherit', cursor: 'pointer', outline: 'none',
+  }
 
   if (loading) {
     return (
@@ -215,6 +239,15 @@ export default function Dashboard() {
                 cursor: 'pointer', fontFamily: 'inherit',
               }}>{p.label}</button>
             ))}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>Base:</span>
+            <select value={baseYear} onChange={e => handleYearChange(Number(e.target.value))} style={selectStyle}>
+              {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <select value={baseMonthIdx} onChange={e => setBaseMonthIdx(Number(e.target.value))} style={selectStyle}>
+              {MONTHS_SHORT.map((m, i) => i <= maxMonth || baseYear < now0.getFullYear() ? <option key={i} value={i}>{m}</option> : null)}
+            </select>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => setExcludeViajes(!excludeViajes)} style={{

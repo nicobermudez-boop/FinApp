@@ -100,6 +100,11 @@ export default function Gastos() {
   const [loading, setLoading] = useState(true)
   const [currency, setCurrency] = useState('ARS')
   const [period, setPeriod] = useState('ytd')
+  const now0 = new Date()
+  const defYear = now0.getMonth() === 0 ? now0.getFullYear() - 1 : now0.getFullYear()
+  const defMonth = now0.getMonth() === 0 ? 11 : now0.getMonth() - 1
+  const [baseYear, setBaseYear] = useState(defYear)
+  const [baseMonthIdx, setBaseMonthIdx] = useState(defMonth)
   const [excludeExtra, setExcludeExtra] = useState(false)
   const [excludeViajes, setExcludeViajes] = useState(false)
   const [distGroup, setDistGroup] = useState('category')
@@ -154,8 +159,7 @@ export default function Gastos() {
   const toggleCon = (id) => setFilterCons(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
 
   const { kpis, barData, distData, tableData, catColors } = useMemo(() => {
-    const now = new Date()
-    const endDate = new Date(now.getFullYear(), now.getMonth(), 0)
+    const endDate = new Date(baseYear, baseMonthIdx + 1, 0)
     let startDate
 
     if (period === 'all') {
@@ -163,7 +167,7 @@ export default function Gastos() {
       const minT = times.length ? Math.min(...times) : endDate.getTime()
       startDate = new Date(new Date(minT).getFullYear(), new Date(minT).getMonth(), 1)
     } else if (period === 'ytd') {
-      startDate = new Date(now.getFullYear(), 0, 1)
+      startDate = new Date(baseYear, 0, 1)
     } else {
       const m = { '1m': 1, '3m': 3, '6m': 6, '1y': 12 }[period]
       startDate = new Date(endDate.getFullYear(), endDate.getMonth() - m + 1, 1)
@@ -318,7 +322,26 @@ export default function Gastos() {
       kpis: { totalExp, prevTotalExp, yaTotalExp, totalInc, prevTotalInc, yaTotalInc, avgM, pctInc, prevPctInc, yaPctInc },
       barData: bData, distData: dData, tableData: tData, catColors: cCol,
     }
-  }, [transactions, currency, period, excludeExtra, excludeViajes, filterCats, filterSubs, filterCons, distGroup, tableGroup, catMap, subMap, conMap, categories, concepts, subcategories])
+  }, [transactions, currency, period, baseYear, baseMonthIdx, excludeExtra, excludeViajes, filterCats, filterSubs, filterCons, distGroup, tableGroup, catMap, subMap, conMap, categories, concepts, subcategories])
+
+  const availableYears = useMemo(() => {
+    const years = new Set(transactions.map(t => new Date(t.date + 'T00:00:00').getFullYear()).filter(y => !isNaN(y)))
+    years.add(defYear)
+    return [...years].sort()
+  }, [transactions, defYear])
+
+  const maxMonth = baseYear === now0.getFullYear() ? now0.getMonth() - 1 : 11
+  const handleYearChange = (y) => {
+    setBaseYear(y)
+    const max = y === now0.getFullYear() ? now0.getMonth() - 1 : 11
+    if (baseMonthIdx > max) setBaseMonthIdx(max)
+  }
+
+  const selectStyle = {
+    padding: '5px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)',
+    background: 'var(--bg-tertiary)', color: 'var(--text-secondary)',
+    fontSize: 12, fontFamily: 'inherit', cursor: 'pointer', outline: 'none',
+  }
 
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 10, color: 'var(--text-muted)' }}><Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /><span>Cargando...</span></div>
 
@@ -363,6 +386,15 @@ export default function Gastos() {
             {PERIODS.map(p => (
               <button key={p.key} onClick={() => setPeriod(p.key)} style={{ padding: '5px 12px', borderRadius: 'var(--radius-sm)', border: 'none', background: period === p.key ? 'var(--color-accent)' : 'transparent', color: period === p.key ? '#fff' : 'var(--text-muted)', fontSize: 12, fontWeight: period === p.key ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit' }}>{p.label}</button>
             ))}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>Base:</span>
+            <select value={baseYear} onChange={e => handleYearChange(Number(e.target.value))} style={selectStyle}>
+              {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <select value={baseMonthIdx} onChange={e => setBaseMonthIdx(Number(e.target.value))} style={selectStyle}>
+              {MONTHS_SHORT.map((m, i) => i <= maxMonth || baseYear < now0.getFullYear() ? <option key={i} value={i}>{m}</option> : null)}
+            </select>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => setExcludeViajes(!excludeViajes)} style={excludeBtnStyle(excludeViajes)}>✈️ Viajes</button>
