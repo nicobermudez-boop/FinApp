@@ -239,8 +239,9 @@ export default function Carga() {
   const valid = useMemo(() => {
     if (!amount || Number(amount) <= 0) return false
     if (!person) return false
+    if (isRec && (isNaN(rPer) || rPer < 2 || rPer > 60)) return false
     return type === 'expense' ? conId !== null : incCon !== null
-  }, [amount, type, conId, incCon, person])
+  }, [amount, type, conId, incCon, person, isRec, rPer])
 
   const handleSubmit = async () => {
     if (!valid || saving) return
@@ -301,7 +302,7 @@ export default function Carga() {
     setSaving(false)
   }
 
-  const selCat = (id) => { setCatId(id); setSubId(null); setConId(null) }
+  const selCat = (id) => { setCatId(id); setSubId(null); setConId(null); setTimeout(() => aRef.current?.focus(), 50) }
 
   if (loading) {
     return (
@@ -394,12 +395,12 @@ export default function Carga() {
                 </button>))}
             </div></div>
 
-          {isV && <div className="sec"><div className="sl">Destino del viaje</div>
+          {isV && <div className="sec sec-in"><div className="sl">Destino del viaje</div>
             <div className="dw"><span style={{ fontSize: 16 }}>📍</span>
               <input className="di" type="text" placeholder="Ej: Disney, Europa, Mar del Plata..."
                 value={dest} onChange={e => setDest(e.target.value)} /></div></div>}
 
-          {!isV && subs.length > 1 && <div className="sec"><div className="sl">Subcategoría</div>
+          {!isV && subs.length > 1 && <div className="sec sec-in"><div className="sl">Subcategoría</div>
             <div className="pills">{subId ? (
               <button className="p s" style={{ position: 'relative', paddingRight: 24 }}
                 onClick={() => { setSubId(null); setConId(null) }}>{sub?.name} <span style={{ position: 'absolute', right: 8, fontSize: 11, color: 'var(--text-dim)' }}>✕</span></button>
@@ -407,7 +408,7 @@ export default function Carga() {
               <button key={s.id} className="p"
                 onClick={() => { setSubId(s.id); setConId(null) }}>{s.name}</button>))}</div></div>}
 
-          {cons.length > 0 && <div className="sec"><div className="sl">Concepto</div>
+          {cons.length > 0 && <div className="sec sec-in"><div className="sl">Concepto</div>
             <div className="pills">{conId ? (
               <button className="p s" style={{ position: 'relative', paddingRight: 24 }}
                 onClick={() => setConId(null)}>{cons.find(c => c.id === conId)?.name} <span style={{ position: 'absolute', right: 8, fontSize: 11, color: 'var(--text-dim)' }}>✕</span></button>
@@ -415,7 +416,7 @@ export default function Carga() {
               <button key={c.id} className="p"
                 onClick={() => setConId(c.id)}>{c.name}</button>))}</div></div>}
 
-          {conId && <div className="sec"><div className="sl">Medio de pago</div>
+          {conId && <div className="sec sec-in"><div className="sl">Medio de pago</div>
             <div className="pills">
               {PAY_METHODS.map(pm => (
                 <button key={pm.value} className={`p ${pay === pm.value ? 's' : ''}`}
@@ -423,7 +424,7 @@ export default function Carga() {
                   {pm.icon} {pm.label}</button>))}
             </div>
             {pay === 'Crédito' && <>
-              <div className="ir">
+              <div className="ir sec-in">
                 <span className="il">Cuotas</span>
                 {[1, 3, 6, 12, 18, 24].map(n => <button key={n} className={`ip ${inst === n ? 's' : ''}`}
                   onClick={() => setInst(n)}>{n}</button>)}
@@ -441,13 +442,13 @@ export default function Carga() {
             <div className="icg">
               {INCOME_CONCEPTS.map(ic => (
                 <button key={ic.name} className={`icc ${incCon === ic.name ? 's' : ''}`}
-                  onClick={() => setIncCon(ic.name)}>
+                  onClick={() => { setIncCon(ic.name); setTimeout(() => aRef.current?.focus(), 50) }}>
                   <div className="ici">{ic.icon}</div>
                   <div className="icn">{ic.name}</div>
                 </button>))}
             </div></div>
 
-          {incCon && <div className="sec"><div className="sl">Tipo</div>
+          {incCon && <div className="sec sec-in"><div className="sl">Tipo</div>
             <div className="ist">
               <button className={`isb ${incSub === 'recurrente' ? 's' : ''}`}
                 onClick={() => setIncSub('recurrente')}>🔄 Recurrente</button>
@@ -487,7 +488,7 @@ export default function Carga() {
             <span className="tl">🔄 {type === 'expense' ? 'Gasto' : 'Ingreso'} recurrente</span>
             <div className={`sw ${isRec ? 'on' : ''}`} />
           </div>
-          {isRec && <div className="rc">
+          {isRec && <div className="rc sec-in">
             <select className="sf" value={rFreq} onChange={e => setRFreq(e.target.value)}>
               {FREQS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}</select>
             <span style={{ fontSize: 12, color: 'var(--txm)' }}>×</span>
@@ -499,7 +500,10 @@ export default function Carga() {
       </div>
 
       {/* SUBMIT */}
-      <div className="sa">
+      <div className="sa" style={{ display: 'flex', gap: 10 }}>
+        {(amount || catId || incCon) && (
+          <button className="clr-btn" onClick={reset} type="button" title="Limpiar formulario">↺ Limpiar</button>
+        )}
         <button className={`sb ${type}`} disabled={!valid || saving} onClick={handleSubmit}>
           {saving ? 'Guardando...' : type === 'expense' ? 'Registrar Gasto' : 'Registrar Ingreso'}
           {!saving && amount && valid && ` · ${fmt(Number(amount), cur)}`}
