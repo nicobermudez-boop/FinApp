@@ -3,6 +3,9 @@ import { supabase } from '../lib/supabase'
 import { createTransaction, getRecentTransactions } from '../lib/transactions'
 import { getLatestRate } from '../lib/exchangeRate'
 import { useAuth } from '../context/AuthContext'
+import SelectionPills from '../components/SelectionPills'
+import CategoryGrid from '../components/CategoryGrid'
+import RecentTransactions from '../components/RecentTransactions'
 
 const INCOME_CONCEPTS = [
   { name: 'Sueldo', icon: '💰', defaultSubtype: 'recurrente' },
@@ -383,17 +386,13 @@ export default function Carga() {
         {/* EXPENSE */}
         {type === 'expense' && <>
           <div className="sec"><div className="sl">Categoría</div>
-            <div className="cg">
-              {catId ? (
-                <button className="cc s" onClick={() => selCat(catId)} style={{ position: 'relative' }}>
-                  <div className="ci">{cat?.icon || '📦'}</div><div className="cn">{cat?.name}</div>
-                  <span onClick={e => { e.stopPropagation(); setCatId(null); setSubId(null); setConId(null) }} style={{ position: 'absolute', top: 4, right: 6, fontSize: 12, color: 'var(--text-dim)', cursor: 'pointer', lineHeight: 1 }}>✕</span>
-                </button>
-              ) : expenseCats.map(c => (
-                <button key={c.id} className="cc" onClick={() => selCat(c.id)}>
-                  <div className="ci">{c.icon || '📦'}</div><div className="cn">{c.name}</div>
-                </button>))}
-            </div></div>
+            <CategoryGrid
+              categories={expenseCats}
+              selectedId={catId}
+              selectedCat={cat}
+              onSelect={selCat}
+              onClear={() => { setCatId(null); setSubId(null); setConId(null) }}
+            /></div>
 
           {isV && <div className="sec sec-in"><div className="sl">Destino del viaje</div>
             <div className="dw"><span style={{ fontSize: 16 }}>📍</span>
@@ -401,28 +400,28 @@ export default function Carga() {
                 value={dest} onChange={e => setDest(e.target.value)} /></div></div>}
 
           {!isV && subs.length > 1 && <div className="sec sec-in"><div className="sl">Subcategoría</div>
-            <div className="pills">{subId ? (
-              <button className="p s" style={{ position: 'relative', paddingRight: 24 }}
-                onClick={() => { setSubId(null); setConId(null) }}>{sub?.name} <span style={{ position: 'absolute', right: 8, fontSize: 11, color: 'var(--text-dim)' }}>✕</span></button>
-            ) : subs.map(s => (
-              <button key={s.id} className="p"
-                onClick={() => { setSubId(s.id); setConId(null) }}>{s.name}</button>))}</div></div>}
+            <SelectionPills
+              items={subs.map(s => ({ id: s.id, label: s.name }))}
+              selected={subId}
+              onSelect={(id) => { setSubId(id); setConId(null) }}
+              onClear={() => { setSubId(null); setConId(null) }}
+            /></div>}
 
           {cons.length > 0 && <div className="sec sec-in"><div className="sl">Concepto</div>
-            <div className="pills">{conId ? (
-              <button className="p s" style={{ position: 'relative', paddingRight: 24 }}
-                onClick={() => setConId(null)}>{cons.find(c => c.id === conId)?.name} <span style={{ position: 'absolute', right: 8, fontSize: 11, color: 'var(--text-dim)' }}>✕</span></button>
-            ) : cons.map(c => (
-              <button key={c.id} className="p"
-                onClick={() => setConId(c.id)}>{c.name}</button>))}</div></div>}
+            <SelectionPills
+              items={cons.map(c => ({ id: c.id, label: c.name }))}
+              selected={conId}
+              onSelect={setConId}
+              onClear={() => setConId(null)}
+            /></div>}
 
           {conId && <div className="sec sec-in"><div className="sl">Medio de pago</div>
-            <div className="pills">
-              {PAY_METHODS.map(pm => (
-                <button key={pm.value} className={`p ${pay === pm.value ? 's' : ''}`}
-                  onClick={() => { setPay(pm.value); if (pm.value !== 'Crédito') setInst(1) }}>
-                  {pm.icon} {pm.label}</button>))}
-            </div>
+            <SelectionPills
+              items={PAY_METHODS.map(pm => ({ id: pm.value, label: `${pm.icon} ${pm.label}` }))}
+              selected={pay}
+              onSelect={(value) => { setPay(value); if (value !== 'Crédito') setInst(1) }}
+              alwaysShow
+            />
             {pay === 'Crédito' && <>
               <div className="ir sec-in">
                 <span className="il">Cuotas</span>
@@ -511,35 +510,7 @@ export default function Carga() {
       </div>
 
       {/* RECENT */}
-      {recent.length > 0 && <div className="rs"><div className="rt">Últimos registros</div>
-        {recent.map(tx => (
-          <div key={tx.id} className="ri" onClick={() => handleRepeat(tx)} title="Repetir transacción">
-            <div className="rl">
-              <span className="rx">{tx.categories?.icon || '💰'}</span>
-              <div className="rn">
-                <div className="rc2">
-                  {tx.concepts?.name || tx.income_concept || ''}
-                  {tx.destination && <span style={{ color: 'var(--txd)' }}> · {tx.destination}</span>}
-                  {tx.description && tx.description !== (tx.concepts?.name || tx.income_concept) && (
-                    <span style={{ color: 'var(--text-secondary)', fontWeight: 400 }}> · {tx.description}</span>
-                  )}
-                </div>
-                <div className="rd">
-                  {tx.categories?.name || 'Ingresos'} · {tx.person} · {tx.date}
-                  {tx.installments > 1 && ` · ${tx.installment_number}/${tx.installments}`}
-                  {tx.income_subtype === 'extraordinario' && ' · ⭐'}
-                  {tx.is_recurring && ' · 🔄'}
-                </div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-              <div className={`ra ${tx.type}`}>
-                {tx.type === 'expense' ? '−' : '+'}{fmt(tx.amount, tx.currency)}
-              </div>
-              <span style={{ fontSize: 13, color: 'var(--txd)', opacity: 0.6 }}>↩</span>
-            </div>
-          </div>))}
-      </div>}
+      <RecentTransactions transactions={recent} onRepeat={handleRepeat} />
 
       {toast && <div className={`toast ${toast.type}`}>{toast.type === 'error' ? '✗' : '✓'} {toast.msg}</div>}
     </div>
