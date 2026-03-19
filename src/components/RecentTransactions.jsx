@@ -1,10 +1,4 @@
-const fmt = (n, c = 'ARS') => {
-  if (!n && n !== 0) return ''
-  const a = Math.abs(Number(n))
-  return c === 'USD'
-    ? `US$ ${a.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    : `$ ${a.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-}
+import { fmtForm as fmt } from '../lib/format'
 
 // RecentTransactions — últimas transacciones con click para repetir
 export default function RecentTransactions({ transactions, onRepeat }) {

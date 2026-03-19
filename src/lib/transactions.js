@@ -26,31 +26,30 @@ export async function createTransaction(tx, userId) {
   }
   
   const records = []
-  
+  const today = new Date().toISOString().slice(0, 10)
+
+  // Resolve exchange rate + USD amount for a given date and amount
+  async function resolveUsd(dateStr, amount) {
+    if (dateStr > today) return { rate: null, amountUsd: null }
+    const r = await getExchangeRate(dateStr)
+    if (!r) return { rate: null, amountUsd: null }
+    const amountUsd = tx.currency === 'ARS'
+      ? Math.round((amount / r) * 100) / 100
+      : amount
+    return { rate: r, amountUsd }
+  }
+
   if (tx.paymentMethod === 'Crédito' && tx.installments > 1) {
     // === INSTALLMENTS (cuotas) ===
     const groupId = crypto.randomUUID()
     const installmentAmount = Math.round((tx.amount / tx.installments) * 100) / 100
-    
+
     for (let i = 0; i < tx.installments; i++) {
       const installDate = new Date(baseDate)
       installDate.setMonth(installDate.getMonth() + i)
       const dateStr = installDate.toISOString().slice(0, 10)
-      
-      // Only assign exchange rate if date is today or past
-      const today = new Date().toISOString().slice(0, 10)
-      let instRate = null
-      let amountUsd = null
-      
-      if (dateStr <= today) {
-        instRate = await getExchangeRate(dateStr)
-        if (instRate) {
-          amountUsd = tx.currency === 'ARS'
-            ? Math.round((installmentAmount / instRate) * 100) / 100
-            : installmentAmount
-        }
-      }
-      
+      const { rate: instRate, amountUsd } = await resolveUsd(dateStr, installmentAmount)
+
       records.push({
         ...base,
         date: dateStr,
@@ -65,31 +64,20 @@ export async function createTransaction(tx, userId) {
   } else if (tx.isRecurring && tx.recurrenceFrequency && tx.recurrencePeriods > 1) {
     // === RECURRENCE ===
     const recId = crypto.randomUUID()
-    
+
     for (let i = 0; i < tx.recurrencePeriods; i++) {
       const recDate = new Date(baseDate)
-      
+
       switch (tx.recurrenceFrequency) {
         case 'monthly': recDate.setMonth(recDate.getMonth() + i); break
         case 'weekly': recDate.setDate(recDate.getDate() + (i * 7)); break
         case 'biweekly': recDate.setDate(recDate.getDate() + (i * 14)); break
         case 'yearly': recDate.setFullYear(recDate.getFullYear() + i); break
       }
-      
+
       const dateStr = recDate.toISOString().slice(0, 10)
-      const today = new Date().toISOString().slice(0, 10)
-      let recRate = null
-      let amountUsd = null
-      
-      if (dateStr <= today) {
-        recRate = await getExchangeRate(dateStr)
-        if (recRate) {
-          amountUsd = tx.currency === 'ARS'
-            ? Math.round((tx.amount / recRate) * 100) / 100
-            : tx.amount
-        }
-      }
-      
+      const { rate: recRate, amountUsd } = await resolveUsd(dateStr, tx.amount)
+
       records.push({
         ...base,
         date: dateStr,

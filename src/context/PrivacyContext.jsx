@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback, useMemo } from 'react'
 
 const PrivacyContext = createContext({})
 
@@ -18,8 +18,13 @@ export function PrivacyProvider({ children }) {
     })
   }, [])
 
+  const value = useMemo(
+    () => ({ hideNumbers, toggleHideNumbers }),
+    [hideNumbers, toggleHideNumbers]
+  )
+
   return (
-    <PrivacyContext.Provider value={{ hideNumbers, toggleHideNumbers }}>
+    <PrivacyContext.Provider value={value}>
       {children}
     </PrivacyContext.Provider>
   )

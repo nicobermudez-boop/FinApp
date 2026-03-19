@@ -3,12 +3,8 @@ import { supabase } from '../lib/supabase'
 import { fetchAllTransactions } from '../lib/fetchAll'
 import CurrencyToggle from '../components/CurrencyToggle'
 import { Filter, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
-
-function fmt(value, currency) {
-  if (value === null || value === undefined || isNaN(value) || value === 0) return '\u2013'
-  if (currency === 'USD') return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value)
-  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value)
-}
+import { fmt } from '../lib/format'
+import { getAmount } from '../lib/currency'
 
 function getMonthColumns(months) {
   const cols = []
@@ -154,18 +150,6 @@ export default function Detallado() {
       return true
     })
 
-    const getAmount = (t) => {
-      if (currency === 'USD') {
-        if (t.amount_usd) return parseFloat(t.amount_usd)
-        if (t.currency === 'USD') return parseFloat(t.amount) || 0
-        const rate = parseFloat(t.exchange_rate)
-        return rate ? (parseFloat(t.amount) || 0) / rate : 0
-      }
-      if (t.currency === 'ARS') return parseFloat(t.amount) || 0
-      const rate = parseFloat(t.exchange_rate)
-      return rate ? (parseFloat(t.amount) || 0) * rate : 0
-    }
-
     const getMonthKey = (dateStr) => {
       const d = new Date(dateStr + 'T00:00:00')
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -180,7 +164,7 @@ export default function Detallado() {
       const conceptName = conceptMap[t.concept_id]?.name || 'Sin concepto'
       const desc = t.description || conceptName
       const key = `${catName}||${subcatName}||${conceptName}||${desc}`
-      const amount = getAmount(t)
+      const amount = getAmount(t, currency)
       const mk = getMonthKey(t.date)
 
       if (!rowMap[key]) {
