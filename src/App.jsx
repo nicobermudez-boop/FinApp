@@ -1,26 +1,36 @@
-import { useState, useEffect } from 'react'
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { PrivacyProvider } from './context/PrivacyContext'
 import Sidebar from './components/Sidebar'
+import useIsMobile from './hooks/useIsMobile'
 import Login from './pages/Login'
-import Detallado from './pages/Detallado'
-import Evolucion from './pages/Evolucion'
-import Dashboard from './pages/Dashboard'
-import Gastos from './pages/Gastos'
-import Historial from './pages/Historial'
-import Configuracion from './pages/Configuracion'
-import Carga from './pages/Carga'
+
+const Carga = lazy(() => import('./pages/Carga'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Evolucion = lazy(() => import('./pages/Evolucion'))
+const Gastos = lazy(() => import('./pages/Gastos'))
+const Detallado = lazy(() => import('./pages/Detallado'))
+const Historial = lazy(() => import('./pages/Historial'))
+const Configuracion = lazy(() => import('./pages/Configuracion'))
+
+function PageLoader() {
+  return (
+    <div style={{
+      height: '100%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: 'var(--text-muted)',
+    }}>
+      Cargando...
+    </div>
+  )
+}
 
 function AppLayout() {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
-  }, [])
+  const isMobile = useIsMobile()
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -33,16 +43,18 @@ function AppLayout() {
         transition: 'margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
         background: 'var(--bg-primary)',
       }}>
-        <Routes>
-          <Route path="/carga" element={<Carga />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/evolucion" element={<Evolucion />} />
-          <Route path="/gastos" element={<Gastos />} />
-          <Route path="/detallado" element={<Detallado />} />
-          <Route path="/historial" element={<Historial />} />
-          <Route path="/configuracion" element={<Configuracion />} />
-          <Route path="*" element={<Navigate to="/carga" replace />} />
-        </Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/carga" element={<Carga />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/evolucion" element={<Evolucion />} />
+            <Route path="/gastos" element={<Gastos />} />
+            <Route path="/detallado" element={<Detallado />} />
+            <Route path="/historial" element={<Historial />} />
+            <Route path="/configuracion" element={<Configuracion />} />
+            <Route path="*" element={<Navigate to="/carga" replace />} />
+          </Routes>
+        </Suspense>
       </main>
     </div>
   )

@@ -8,6 +8,7 @@ import {
   Tooltip, Legend, ResponsiveContainer
 } from 'recharts'
 import { Loader2 } from 'lucide-react'
+import { fmtCompact as fmt, fmtLabel } from '../lib/format'
 
 const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
@@ -16,36 +17,6 @@ const VIEWS = [
   { key: 'ingresos', label: 'Ingresos', color: '#22c55e', colorLight: '#86efac' },
   { key: 'ahorro', label: 'Ahorro', color: '#3b82f6', colorLight: '#93c5fd' },
 ]
-
-function fmt(value, currency) {
-  if (value === null || value === undefined || isNaN(value)) return '–'
-  if (currency === 'USD') {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency', currency: 'USD',
-      minimumFractionDigits: 0, maximumFractionDigits: 0,
-      notation: 'compact',
-    }).format(value)
-  }
-  return new Intl.NumberFormat('es-AR', {
-    style: 'currency', currency: 'ARS',
-    minimumFractionDigits: 0, maximumFractionDigits: 0,
-    notation: 'compact',
-  }).format(value)
-}
-
-function fmtLabel(value, currency) {
-  if (!value) return ''
-  const abs = Math.abs(value)
-  const sign = value < 0 ? '-' : ''
-  if (currency === 'USD') {
-    if (abs >= 1000000) return `${sign}$${(abs / 1000000).toFixed(1)}M`
-    if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(1)}k`
-    return `${sign}$${Math.round(abs)}`
-  }
-  if (abs >= 1000000) return `${sign}$${(abs / 1000000).toFixed(1)}M`
-  if (abs >= 1000) return `${sign}$${(abs / 1000).toFixed(1)}k`
-  return `${sign}$${Math.round(abs)}`
-}
 
 function CustomTooltip({ active, payload, label, currency, hideNumbers }) {
   if (!active || !payload?.length) return null

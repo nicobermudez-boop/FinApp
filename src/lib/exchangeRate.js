@@ -57,15 +57,8 @@ async function fetchMEPFromAPI() {
     // Use average of compra and venta (promedio del día)
     const rate = (data.compra + data.venta) / 2
     return Math.round(rate * 100) / 100
-  } catch (e) {
-    // Fallback API
-    try {
-      const res = await fetch('https://dolarapi.com/v1/dolares/bolsa')
-      const data = await res.json()
-      return (data.compra + data.venta) / 2
-    } catch {
-      return null
-    }
+  } catch {
+    return null
   }
 }
 

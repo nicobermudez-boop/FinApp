@@ -3,11 +3,14 @@ import { supabase } from '../lib/supabase'
 import { fetchAllTransactions } from '../lib/fetchAll'
 import CurrencyToggle from '../components/CurrencyToggle'
 import { usePrivacy } from '../context/PrivacyContext'
+import useIsMobile from '../hooks/useIsMobile'
 import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ComposedChart, Bar, Line, LabelList,
 } from 'recharts'
 import { Loader2, ChevronDown, ChevronUp } from 'lucide-react'
+import { fmt, fmtCompact as fmtC } from '../lib/format'
+import { getAmount } from '../lib/currency'
 
 const PERIODS = [
   { key: 'all', label: 'All' },
@@ -20,24 +23,6 @@ const PERIODS = [
 const MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 const COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#64748b','#84cc16','#14b8a6','#f43f5e']
 
-function getAmount(t, currency) {
-  if (currency === 'USD') {
-    if (t.amount_usd) return parseFloat(t.amount_usd)
-    if (t.currency === 'USD') return parseFloat(t.amount) || 0
-    const r = parseFloat(t.exchange_rate); return r ? (parseFloat(t.amount) || 0) / r : 0
-  }
-  if (t.currency === 'ARS') return parseFloat(t.amount) || 0
-  const r = parseFloat(t.exchange_rate); return r ? (parseFloat(t.amount) || 0) * r : 0
-}
-
-function fmt(v, c) {
-  if (v == null || isNaN(v)) return '\u2013'
-  return new Intl.NumberFormat(c === 'USD' ? 'en-US' : 'es-AR', { style: 'currency', currency: c, minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v)
-}
-function fmtC(v, c) {
-  if (v == null || isNaN(v)) return '\u2013'
-  return new Intl.NumberFormat(c === 'USD' ? 'en-US' : 'es-AR', { style: 'currency', currency: c, minimumFractionDigits: 1, maximumFractionDigits: 1, notation: 'compact' }).format(v)
-}
 function fmtSmart(v, c) {
   if (v == null || isNaN(v)) return '\u2013'
   const abs = Math.abs(v); const th = c === 'USD' ? 1000 : 100000
@@ -116,9 +101,7 @@ export default function Gastos() {
   const [filterCats, setFilterCats] = useState([])
   const [filterSubs, setFilterSubs] = useState([])
   const [filterCons, setFilterCons] = useState([])
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-
-  useEffect(() => { const c = () => setIsMobile(window.innerWidth < 768); window.addEventListener('resize', c); return () => window.removeEventListener('resize', c) }, [])
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     ;(async () => {

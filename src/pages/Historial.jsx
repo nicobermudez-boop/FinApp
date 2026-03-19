@@ -5,19 +5,11 @@ import { useAuth } from '../context/AuthContext'
 import { Loader2, Pencil, Trash2, Download, Check, X, ChevronLeft, ChevronRight } from 'lucide-react'
 
 import { fetchAllTransactions } from '../lib/fetchAll'
+import { fmt } from '../lib/format'
 
 const INCOME_CONCEPTS = ['Sueldo', 'Bono', 'Rentas', 'Otros']
 
 const PAGE_SIZE = 25
-
-function fmt(value, currency) {
-  if (!value) return '–'
-  const n = Number(value)
-  if (currency === 'USD') {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
-  }
-  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n)
-}
 
 function fmtDate(d) {
   if (!d) return '–'

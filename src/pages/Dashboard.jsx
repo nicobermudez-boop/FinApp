@@ -8,6 +8,8 @@ import {
   Tooltip, Legend, ResponsiveContainer, ComposedChart, Bar, Line
 } from 'recharts'
 import { Loader2 } from 'lucide-react'
+import { fmt } from '../lib/format'
+import { getAmount } from '../lib/currency'
 
 const PERIODS = [
   { key: 'all', label: 'All' },
@@ -20,24 +22,6 @@ const PERIODS = [
 
 const MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
-function getAmount(t, currency) {
-  if (currency === 'USD') {
-    if (t.amount_usd) return parseFloat(t.amount_usd)
-    if (t.currency === 'USD') return parseFloat(t.amount) || 0
-    const rate = parseFloat(t.exchange_rate)
-    return rate ? (parseFloat(t.amount) || 0) / rate : 0
-  } else {
-    if (t.currency === 'ARS') return parseFloat(t.amount) || 0
-    const rate = parseFloat(t.exchange_rate)
-    return rate ? (parseFloat(t.amount) || 0) * rate : 0
-  }
-}
-
-function fmt(value, currency) {
-  if (value === null || value === undefined || isNaN(value)) return '–'
-  if (currency === 'USD') return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value)
-  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value)
-}
 
 function fmtCompact(value, currency) {
   if (value === null || value === undefined || isNaN(value)) return '–'

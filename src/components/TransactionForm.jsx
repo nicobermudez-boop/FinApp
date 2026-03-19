@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { createTransaction, getRecentTransactions } from '../lib/transactions'
 import { getLatestRate } from '../lib/exchangeRate'
+import { fmtForm as fmt } from '../lib/format'
 
 const INCOME_CONCEPTS = [
   { name: 'Sueldo', icon: '💰', defaultSubtype: 'recurrente' },
@@ -21,14 +22,6 @@ const FREQS = [
   { value: 'biweekly', label: 'Quincenal' },
   { value: 'yearly', label: 'Anual' }
 ]
-
-const fmt = (n, c = 'ARS') => {
-  if (!n && n !== 0) return ''
-  const a = Math.abs(Number(n))
-  return c === 'USD'
-    ? `US$ ${a.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    : `$ ${a.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-}
 
 export default function TransactionForm({ user, onSignOut }) {
   // Data from Supabase

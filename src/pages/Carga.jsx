@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext'
 import SelectionPills from '../components/SelectionPills'
 import CategoryGrid from '../components/CategoryGrid'
 import RecentTransactions from '../components/RecentTransactions'
+import { fmtForm as fmt, fmtInput } from '../lib/format'
 
 const INCOME_CONCEPTS = [
   { name: 'Sueldo', icon: '💰', defaultSubtype: 'recurrente' },
@@ -25,27 +26,6 @@ const FREQS = [
   { value: 'biweekly', label: 'Quincenal' },
   { value: 'yearly', label: 'Anual' }
 ]
-
-const fmt = (n, c = 'ARS') => {
-  if (!n && n !== 0) return ''
-  const a = Math.abs(Number(n))
-  return c === 'USD'
-    ? `US$ ${a.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-    : `$ ${a.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
-}
-
-const fmtInput = (raw, currency) => {
-  if (!raw) return ''
-  if (currency === 'USD') {
-    const parts = raw.split('.')
-    const int = (parseInt(parts[0], 10) || 0).toString()
-    const formatted = int.replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F')
-    return parts.length > 1 ? formatted + ',' + parts[1] : formatted
-  }
-  const num = parseInt(raw, 10)
-  if (isNaN(num)) return ''
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u202F')
-}
 
 export default function Carga() {
   const { user } = useAuth()

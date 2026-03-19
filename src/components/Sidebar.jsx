@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import useIsMobile from '../hooks/useIsMobile'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { usePrivacy } from '../context/PrivacyContext'
@@ -167,18 +168,12 @@ const styles = {
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const isMobile = useIsMobile()
   const location = useLocation()
   const navigate = useNavigate()
   const { signOut } = useAuth()
   const { mode, cycleTheme } = useTheme()
   const { hideNumbers, toggleHideNumbers } = usePrivacy()
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
-  }, [])
 
   const isCollapsed = collapsed && !isMobile
 
