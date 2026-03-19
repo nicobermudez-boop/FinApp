@@ -237,6 +237,8 @@ export default function Carga() {
     setIncCon(null); setIncSub('recurrente')
     setDesc(''); setIsRec(false); setRFreq('monthly'); setRPer(12)
     setDate(new Date().toISOString().slice(0, 10))
+    setPerson('')
+    setTimeout(() => aRef.current?.focus(), 50)
   }, [])
 
   const valid = useMemo(() => {
@@ -338,8 +340,11 @@ export default function Carga() {
     <div className="app">
       {/* HEADER */}
       <div className="hdr">
-        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           {mepRate && <div className="mep">MEP <b>${Math.round(mepRate).toLocaleString('es-AR')}</b></div>}
+          {(amount || catId || incCon || person) && (
+            <button className="clr-btn-hdr" onClick={reset} type="button" title="Limpiar formulario">↺</button>
+          )}
         </div>
         <div className="ttgl" style={{ marginBottom: 12 }}>
           <button className={`tb ${type === 'expense' ? 'ae' : ''}`}
@@ -499,10 +504,7 @@ export default function Carga() {
       </div>
 
       {/* SUBMIT */}
-      <div className="sa" style={{ display: 'flex', gap: 10 }}>
-        {(amount || catId || incCon) && (
-          <button className="clr-btn" onClick={reset} type="button" title="Limpiar formulario">↺ Limpiar</button>
-        )}
+      <div className="sa">
         <button className={`sb ${type}`} disabled={!valid || saving} onClick={handleSubmit}>
           {saving ? 'Guardando...' : type === 'expense' ? 'Registrar Gasto' : 'Registrar Ingreso'}
           {!saving && amount && valid && ` · ${fmt(Number(amount), cur)}`}
