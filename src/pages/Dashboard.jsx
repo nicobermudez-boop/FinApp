@@ -8,7 +8,7 @@ import {
   Tooltip, Legend, ResponsiveContainer, ComposedChart, Bar, Line
 } from 'recharts'
 import { Loader2 } from 'lucide-react'
-import { fmt } from '../lib/format'
+import { fmt, fmtCompact } from '../lib/format'
 import { getAmount } from '../lib/currency'
 
 const PERIODS = [
@@ -21,14 +21,6 @@ const PERIODS = [
 ]
 
 const MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
-
-
-function fmtCompact(value, currency) {
-  if (value === null || value === undefined || isNaN(value)) return '–'
-  const opts = { minimumFractionDigits: 1, maximumFractionDigits: 1, notation: 'compact' }
-  if (currency === 'USD') return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', ...opts }).format(value)
-  return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', ...opts }).format(value)
-}
 
 function CustomTooltip({ active, payload, label, currency, hideNumbers }) {
   if (!active || !payload?.length) return null

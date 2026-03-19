@@ -9,7 +9,7 @@ import {
   ResponsiveContainer, ComposedChart, Bar, Line, LabelList,
 } from 'recharts'
 import { Loader2, ChevronDown, ChevronUp } from 'lucide-react'
-import { fmt, fmtCompact as fmtC } from '../lib/format'
+import { fmt, fmtCompact as fmtC, fmtSmart } from '../lib/format'
 import { getAmount } from '../lib/currency'
 
 const PERIODS = [
@@ -22,12 +22,6 @@ const PERIODS = [
 ]
 const MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 const COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#64748b','#84cc16','#14b8a6','#f43f5e']
-
-function fmtSmart(v, c) {
-  if (v == null || isNaN(v)) return '\u2013'
-  const abs = Math.abs(v); const th = c === 'USD' ? 1000 : 100000
-  return abs >= th ? fmtC(v, c) : fmt(v, c)
-}
 
 function CustomTooltip({ active, payload, label, currency, hideNumbers }) {
   if (!active || !payload?.length) return null

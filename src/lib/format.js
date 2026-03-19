@@ -31,6 +31,13 @@ export function fmtLabel(value) {
   return `${sign}$${Math.round(abs)}`
 }
 
+export function fmtSmart(value, currency) {
+  if (value == null || isNaN(value)) return '\u2013'
+  const abs = Math.abs(value)
+  const threshold = currency === 'USD' ? 1000 : 100000
+  return abs >= threshold ? fmtCompact(value, currency) : fmt(value, currency)
+}
+
 // ── Form-input formatters (Carga, TransactionForm, RecentTransactions) ──────
 
 export function fmtForm(n, c = 'ARS') {

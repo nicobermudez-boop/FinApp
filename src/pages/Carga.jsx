@@ -138,6 +138,7 @@ export default function Carga() {
   // Pre-fill destination with last used value when Viajes is selected
   useEffect(() => {
     if (!isV || !user) return
+    let cancelled = false
     ;(async () => {
       const { data } = await supabase
         .from('transactions')
@@ -146,13 +147,15 @@ export default function Carga() {
         .not('destination', 'is', null)
         .order('created_at', { ascending: false })
         .limit(1)
-      if (data?.[0]?.destination) setDest(prev => prev || data[0].destination)
+      if (!cancelled && data?.[0]?.destination) setDest(prev => prev || data[0].destination)
     })()
+    return () => { cancelled = true }
   }, [isV, user])
 
   // Fetch top 5 descriptions for current cat+sub+concept combo
   useEffect(() => {
     if (!conId) { setTopDescs([]); return }
+    let cancelled = false
     ;(async () => {
       const { data } = await supabase
         .from('transactions')
@@ -162,13 +165,14 @@ export default function Carga() {
         .not('description', 'is', null)
         .order('created_at', { ascending: false })
         .limit(100)
-      if (data) {
+      if (!cancelled && data) {
         const counts = {}
         data.forEach(t => { if (t.description) counts[t.description] = (counts[t.description] || 0) + 1 })
         const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([d]) => d)
         setTopDescs(sorted)
       }
     })()
+    return () => { cancelled = true }
   }, [conId, user.id])
 
   // Income concept default subtype
