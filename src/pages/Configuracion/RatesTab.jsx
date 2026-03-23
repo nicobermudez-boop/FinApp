@@ -14,11 +14,13 @@ export default function RatesTab() {
   async function loadStats() {
     setLoading(true)
     const today = new Date().toISOString().slice(0, 10)
-    const { count: pending } = await supabase.from('transactions').select('*', { count: 'exact', head: true }).lte('date', today).is('exchange_rate', null)
+    const [{ count: pending }, { data: rateData }, { count: rc }] = await Promise.all([
+      supabase.from('transactions').select('*', { count: 'exact', head: true }).lte('date', today).is('exchange_rate', null),
+      supabase.from('exchange_rates').select('rate, date').order('date', { ascending: false }).limit(1).single(),
+      supabase.from('exchange_rates').select('*', { count: 'exact', head: true }),
+    ])
     setPendingCount(pending || 0)
-    const { data: rateData } = await supabase.from('exchange_rates').select('rate, date').order('date', { ascending: false }).limit(1).single()
     if (rateData) { setLatestRate(rateData.rate); setLatestRateDate(rateData.date) }
-    const { count: rc } = await supabase.from('exchange_rates').select('*', { count: 'exact', head: true })
     setRatesCount(rc || 0)
     setLoading(false)
   }

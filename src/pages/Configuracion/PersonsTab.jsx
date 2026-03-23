@@ -32,16 +32,16 @@ export default function PersonsTab({ user }) {
   useEffect(() => { loadAll() }, [])
 
   const add = async (name) => {
-    const { error } = await supabase.from('persons').insert({ name, user_id: user.id })
+    const { data, error } = await supabase.from('persons').insert({ name, user_id: user.id }).select().single()
     if (error) { showCrudError('Error al agregar la persona.'); return }
-    loadAll()
+    if (data) setPersons(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
   }
   const rename = async (id, name) => {
     const { error } = await supabase.from('persons').update({ name }).eq('id', id)
     if (error) { showCrudError('Error al renombrar la persona.'); return }
     const person = persons.find(p => p.id === id)
     if (person) await supabase.from('transactions').update({ person: name }).eq('person', person.name)
-    loadAll()
+    setPersons(prev => prev.map(p => p.id === id ? { ...p, name } : p).sort((a, b) => a.name.localeCompare(b.name)))
   }
   const del = async (id, reassignId) => {
     try {

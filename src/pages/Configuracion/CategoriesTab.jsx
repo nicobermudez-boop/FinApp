@@ -57,13 +57,15 @@ export default function CategoriesTab({ user }) {
   const addCat = async (name) => {
     const { data, error } = await supabase.from('categories').insert({ name, type: catType, user_id: user.id }).select().single()
     if (error) { showCrudError('Error al agregar la categoría.'); return }
-    await loadAll()
-    if (data) setWizard({ step: 'sub', catId: data.id, catName: name })
+    if (data) {
+      setCategories(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
+      setWizard({ step: 'sub', catId: data.id, catName: name })
+    }
   }
   const renameCat = async (id, name) => {
     const { error } = await supabase.from('categories').update({ name }).eq('id', id)
     if (error) { showCrudError('Error al renombrar la categoría.'); return }
-    loadAll()
+    setCategories(prev => prev.map(c => c.id === id ? { ...c, name } : c).sort((a, b) => a.name.localeCompare(b.name)))
   }
   const deleteCat = async (id, reassignId) => {
     try {
@@ -83,13 +85,15 @@ export default function CategoriesTab({ user }) {
   const addSub = async (name) => {
     const { data, error } = await supabase.from('subcategories').insert({ name, category_id: selectedCat, user_id: user.id }).select().single()
     if (error) { showCrudError('Error al agregar la subcategoría.'); return }
-    await loadAll()
-    if (data) setWizard({ step: 'concept', catId: selectedCat, subId: data.id, subName: name, catName: categories.find(c => c.id === selectedCat)?.name })
+    if (data) {
+      setSubcategories(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
+      setWizard({ step: 'concept', catId: selectedCat, subId: data.id, subName: name, catName: categories.find(c => c.id === selectedCat)?.name })
+    }
   }
   const renameSub = async (id, name) => {
     const { error } = await supabase.from('subcategories').update({ name }).eq('id', id)
     if (error) { showCrudError('Error al renombrar la subcategoría.'); return }
-    loadAll()
+    setSubcategories(prev => prev.map(s => s.id === id ? { ...s, name } : s).sort((a, b) => a.name.localeCompare(b.name)))
   }
   const moveSub = async (id, newCatId) => {
     const { error: e1 } = await supabase.from('subcategories').update({ category_id: newCatId }).eq('id', id)
@@ -113,14 +117,14 @@ export default function CategoriesTab({ user }) {
 
   // Concept CRUD
   const addCon = async (name) => {
-    const { error } = await supabase.from('concepts').insert({ name, subcategory_id: selectedSub, user_id: user.id })
+    const { data, error } = await supabase.from('concepts').insert({ name, subcategory_id: selectedSub, user_id: user.id }).select().single()
     if (error) { showCrudError('Error al agregar el concepto.'); return }
-    loadAll()
+    if (data) setConcepts(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
   }
   const renameCon = async (id, name) => {
     const { error } = await supabase.from('concepts').update({ name }).eq('id', id)
     if (error) { showCrudError('Error al renombrar el concepto.'); return }
-    loadAll()
+    setConcepts(prev => prev.map(c => c.id === id ? { ...c, name } : c).sort((a, b) => a.name.localeCompare(b.name)))
   }
   const moveCon = async (id, newSubId) => {
     const { error: e1 } = await supabase.from('concepts').update({ subcategory_id: newSubId }).eq('id', id)
@@ -149,17 +153,20 @@ export default function CategoriesTab({ user }) {
     </div>
   )
 
-  const catItems = filteredCats.map(c => ({ ...c, txCount: txCounts[`cat_${c.id}`] || 0 }))
-  const subItems = filteredSubs.map(s => ({ ...s, txCount: txCounts[`sub_${s.id}`] || 0, parentName: categories.find(c => c.id === s.category_id)?.name }))
-  const conItems = filteredCons.map(c => ({ ...c, txCount: txCounts[`con_${c.id}`] || 0, parentName: subcategories.find(s => s.id === c.subcategory_id)?.name }))
+  const catMap = new Map(categories.map(c => [c.id, c]))
+  const subMap = new Map(subcategories.map(s => [s.id, s]))
 
-  const selectedCatName = categories.find(c => c.id === selectedCat)?.name
-  const selectedSubName = subcategories.find(s => s.id === selectedSub)?.name
+  const catItems = filteredCats.map(c => ({ ...c, txCount: txCounts[`cat_${c.id}`] || 0 }))
+  const subItems = filteredSubs.map(s => ({ ...s, txCount: txCounts[`sub_${s.id}`] || 0, parentName: catMap.get(s.category_id)?.name }))
+  const conItems = filteredCons.map(c => ({ ...c, txCount: txCounts[`con_${c.id}`] || 0, parentName: subMap.get(c.subcategory_id)?.name }))
+
+  const selectedCatName = catMap.get(selectedCat)?.name
+  const selectedSubName = subMap.get(selectedSub)?.name
   const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 16 }
 
   // Move targets
   const catMoveTargets = categories.filter(c => c.type === catType && c.id !== selectedCat).map(c => ({ id: c.id, name: `${c.icon || ''} ${c.name}`.trim() }))
-  const subMoveTargets = subcategories.filter(s => s.id !== selectedSub).map(s => ({ id: s.id, name: `${s.name} (${categories.find(c => c.id === s.category_id)?.name || ''})` }))
+  const subMoveTargets = subcategories.filter(s => s.id !== selectedSub).map(s => ({ id: s.id, name: `${s.name} (${catMap.get(s.category_id)?.name || ''})` }))
 
   return (
     <div>
