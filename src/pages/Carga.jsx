@@ -321,9 +321,9 @@ export default function Carga() {
   }
 
   return (
-    <div className="app">
+    <div className="app" style={isMobile ? { height: 'auto', overflowY: 'visible' } : undefined}>
       {/* HEADER */}
-      <div className="hdr" style={isMobile ? { top: 44 } : undefined}>
+      <div className="hdr" style={isMobile ? { position: 'relative', top: 'auto' } : undefined}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           {mepRate && <div className="mep">MEP <b>${Math.round(mepRate).toLocaleString('es-AR')}</b></div>}
           {(amount || catId || incCon || person) && (
