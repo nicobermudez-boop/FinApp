@@ -21,9 +21,9 @@ export default function AnalyticsHub() {
         background: 'var(--bg-secondary)',
         flexShrink: 0,
         position: 'sticky',
-        top: 44,
+        top: 'calc(44px + env(safe-area-inset-top, 0px))',
         zIndex: 55,
-        transform: hidden ? 'translateY(-44px)' : 'translateY(0)',
+        transform: hidden ? 'translateY(-100px)' : 'translateY(0)',
         transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
       }}>
         {tabs.map((tab) => {
