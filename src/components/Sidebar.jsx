@@ -19,12 +19,14 @@ import {
   Search,
   Eye,
   EyeOff,
+  NotebookPen,
 } from 'lucide-react'
 
 const navSections = [
   {
     items: [
       { path: '/carga', label: 'Carga', icon: PlusCircle },
+      { path: '/pendientes', label: 'Pendientes', icon: NotebookPen },
     ]
   },
   {
