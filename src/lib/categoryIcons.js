@@ -24,6 +24,23 @@ export const ICON_LIST = [
 
 export const DEFAULT_ICON = 'Tag'
 
+// Legacy emoji values → icon name. Allows existing DB rows with emojis to
+// render correctly without requiring a data migration.
+export const EMOJI_TO_ICON = {
+  '🚗': 'Car',
+  '✈️': 'Plane',
+  '🏠': 'Home',
+  '🎁': 'Gift',
+  '🛋️': 'Armchair',
+  '👕': 'Shirt',
+  '🏥': 'Heart',
+  '🎬': 'Film',
+  '📚': 'BookOpen',
+  '🛒': 'ShoppingCart',
+  '💰': 'Wallet',
+  '📦': 'Package',
+}
+
 // Keyword rules for auto-suggesting an icon from a category name
 const KEYWORD_RULES = [
   { keywords: ['transport', 'auto', 'vehic', 'uber', 'taxi', 'nafta', 'combustib', 'peaje', 'estacionam'], icon: 'Car' },
