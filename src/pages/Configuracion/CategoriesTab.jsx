@@ -5,6 +5,7 @@ import { ChevronRight } from 'lucide-react'
 import { SkeletonConfig } from '../../components/Skeleton'
 import CrudList from './CrudList'
 import WizardModal from './WizardModal'
+import { suggestIcon } from '../../lib/categoryIcons'
 
 export default function CategoriesTab({ user }) {
   const [categories, setCategories] = useState([])
@@ -56,7 +57,8 @@ export default function CategoriesTab({ user }) {
 
   // Category CRUD
   const addCat = async (name) => {
-    const { data, error } = await supabase.from('categories').insert({ name, type: catType, user_id: user.id }).select().single()
+    const icon = suggestIcon(name)
+    const { data, error } = await supabase.from('categories').insert({ name, type: catType, icon, user_id: user.id }).select().single()
     if (error) { showCrudError('Error al agregar la categoría.'); return }
     if (data) {
       setCategories(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
@@ -67,6 +69,11 @@ export default function CategoriesTab({ user }) {
     const { error } = await supabase.from('categories').update({ name }).eq('id', id)
     if (error) { showCrudError('Error al renombrar la categoría.'); return }
     setCategories(prev => prev.map(c => c.id === id ? { ...c, name } : c).sort((a, b) => a.name.localeCompare(b.name)))
+  }
+  const updateCatIcon = async (id, icon) => {
+    const { error } = await supabase.from('categories').update({ icon }).eq('id', id)
+    if (error) { showCrudError('Error al cambiar el ícono.'); return }
+    setCategories(prev => prev.map(c => c.id === id ? { ...c, icon } : c))
   }
   const deleteCat = async (id, reassignId) => {
     try {
@@ -166,7 +173,7 @@ export default function CategoriesTab({ user }) {
   const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 16 }
 
   // Move targets
-  const catMoveTargets = categories.filter(c => c.type === catType && c.id !== selectedCat).map(c => ({ id: c.id, name: `${c.icon || ''} ${c.name}`.trim() }))
+  const catMoveTargets = categories.filter(c => c.type === catType && c.id !== selectedCat).map(c => ({ id: c.id, name: c.name }))
   const subMoveTargets = subcategories.filter(s => s.id !== selectedSub).map(s => ({ id: s.id, name: `${s.name} (${catMap.get(s.category_id)?.name || ''})` }))
 
   return (
@@ -192,7 +199,7 @@ export default function CategoriesTab({ user }) {
         {!selectedCat ? (
           <>
             <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 12 }}>Categorías de {catType === 'expense' ? 'Gastos' : 'Ingresos'}</div>
-            <CrudList items={catItems} onAdd={addCat} onRename={renameCat} onDelete={deleteCat} entityName="categoría" onNavigate={id => setSelectedCat(id)} />
+            <CrudList items={catItems} onAdd={addCat} onRename={renameCat} onDelete={deleteCat} entityName="categoría" onNavigate={id => setSelectedCat(id)} onChangeIcon={updateCatIcon} />
           </>
         ) : !selectedSub ? (
           <>

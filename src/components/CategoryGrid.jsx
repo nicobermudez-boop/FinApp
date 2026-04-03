@@ -1,11 +1,13 @@
 // CategoryGrid — expense category selector grid
 // Shows the selected category (with ✕ to deselect) or the full grid to pick from.
+import CategoryIcon from './CategoryIcon'
+
 export default function CategoryGrid({ categories, selectedId, selectedCat, onSelect, onClear }) {
   return (
     <div className="cg">
       {selectedId ? (
         <button className="cc s" onClick={() => onSelect(selectedId)} style={{ position: 'relative' }}>
-          <div className="ci">{selectedCat?.icon || '📦'}</div>
+          <div className="ci"><CategoryIcon name={selectedCat?.icon} /></div>
           <div className="cn">{selectedCat?.name}</div>
           <span
             onClick={e => { e.stopPropagation(); onClear() }}
@@ -15,7 +17,7 @@ export default function CategoryGrid({ categories, selectedId, selectedCat, onSe
         </button>
       ) : categories.map(c => (
         <button key={c.id} className="cc" onClick={() => onSelect(c.id)}>
-          <div className="ci">{c.icon || '📦'}</div>
+          <div className="ci"><CategoryIcon name={c.icon} /></div>
           <div className="cn">{c.name}</div>
         </button>
       ))}
