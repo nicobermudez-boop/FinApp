@@ -39,6 +39,11 @@ function fmtDateLong(d) {
   return `${day}/${m}/${y}`
 }
 
+function localToday() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 function PreviewModal({ preview, currency, catName, personName, confirming, onConfirm, onClose }) {
   const { type, items, duplicate } = preview
   const total = items.reduce((s, i) => s + i.amount, 0)
@@ -165,7 +170,7 @@ export default function Carga() {
   const [type, setType] = useState('expense')
   const [amount, setAmount] = useState('')
   const [cur, setCur] = useState('ARS')
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [date, setDate] = useState(localToday)
   const [person, setPerson] = useState('')
   const [catId, setCatId] = useState(null)
   const [subId, setSubId] = useState(null)
@@ -314,7 +319,7 @@ export default function Carga() {
     setType(tx.type)
     setAmount(tx.amount.toString())
     setCur(tx.currency)
-    setDate(new Date().toISOString().slice(0, 10))
+    setDate(localToday())
     setPerson(tx.person_id)
 
     if (tx.type === 'expense') {
@@ -348,7 +353,7 @@ export default function Carga() {
     setPay('Contado'); setInst(1); setDest('')
     setIncCon(null); setIncSub('recurrente')
     setDesc(''); setIsRec(false); setRFreq('monthly'); setRPer(12)
-    setDate(new Date().toISOString().slice(0, 10))
+    setDate(localToday())
     setPerson('')
     setTimeout(() => aRef.current?.focus(), 50)
   }, [])
