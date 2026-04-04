@@ -25,7 +25,11 @@ const PERIODS = [
   { key: '1y', label: '1y' },
 ]
 const MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
-const COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#3b82f6','#8b5cf6','#ec4899','#64748b','#84cc16','#14b8a6','#f43f5e']
+const DISTINCT_COLORS = [
+  '#3B82F6','#06B6D4','#8B5CF6','#EC4899','#F59E0B',
+  '#10B981','#EF4444','#F97316','#6366F1','#14B8A6',
+  '#22C55E','#EAB308','#A16207','#64748B','#94A3B8',
+]
 
 function CustomTooltip({ active, payload, label, currency, hideNumbers }) {
   if (!active || !payload?.length) return null
@@ -152,7 +156,7 @@ export default function Gastos() {
   const toggleSub = (id) => { setFilterSubs(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]); setFilterCons([]) }
   const toggleCon = (id) => setFilterCons(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
 
-  const { kpis, barData, distData, tableData, chartColors } = useMemo(() => {
+  const { kpis, barData, distData, tableData, chartColors, distColors } = useMemo(() => {
     const endDate = new Date(baseYear, baseMonthIdx + 1, 0)
     let startDate
 
@@ -248,8 +252,28 @@ export default function Gastos() {
       return catMap[id]?.name || '\u2013'
     }
     const uniqItems = [...new Set(curE.map(t => getChartKey(t)).filter(Boolean))]
+    const usedChartColors = new Set()
     const chartColors = {}
-    uniqItems.forEach((id, i) => { chartColors[getChartName(id)] = COLORS[i % COLORS.length] })
+    uniqItems.forEach(id => {
+      const name = getChartName(id)
+      let color
+      if (chartDim === 'category') {
+        color = getIconColor(catMap[id]?.icon)
+      } else if (chartDim === 'subcategory') {
+        if (String(id).startsWith('dest_')) {
+          color = getIconColor(catMap[filterCats[0]]?.icon)
+        } else {
+          color = getIconColor(catMap[subMap[id]?.category_id]?.icon)
+        }
+      } else {
+        color = getIconColor(catMap[subMap[conMap[id]?.subcategory_id]?.category_id]?.icon)
+      }
+      if (!color || usedChartColors.has(color)) {
+        color = DISTINCT_COLORS.find(c => !usedChartColors.has(c)) || '#94A3B8'
+      }
+      usedChartColors.add(color)
+      chartColors[name] = color
+    })
 
     const bData = months.map(({ y, m }) => {
       const label = MONTHS_SHORT[m] + ' ' + String(y).slice(2)
@@ -279,9 +303,32 @@ export default function Gastos() {
       if (!dMap[key]) dMap[key] = { name, value: 0 }
       dMap[key].value += getAmount(t, currency)
     })
-    const dData = Object.values(dMap).map(d => ({ ...d, value: Math.round(d.value) })).sort((a, b) => b.value - a.value)
+    const dData = Object.entries(dMap).map(([id, d]) => ({ ...d, id, value: Math.round(d.value) })).sort((a, b) => b.value - a.value)
     const distTotal = dData.reduce((s, d) => s + d.value, 0)
     dData.forEach(d => { d.pct = distTotal > 0 ? (d.value / distTotal * 100) : 0 })
+
+    const usedDistColors = new Set()
+    const distColors = {}
+    dData.forEach(d => {
+      let color
+      if (distGroup === 'category') {
+        color = getIconColor(catMap[d.id]?.icon)
+      } else if (distGroup === 'subcategory') {
+        if (String(d.id).startsWith('dest_')) {
+          const viajesCat = Object.values(catMap).find(c => c.name === 'Viajes')
+          color = getIconColor(viajesCat?.icon)
+        } else {
+          color = getIconColor(catMap[subMap[d.id]?.category_id]?.icon)
+        }
+      } else {
+        color = getIconColor(catMap[subMap[conMap[d.id]?.subcategory_id]?.category_id]?.icon)
+      }
+      if (!color || usedDistColors.has(color)) {
+        color = DISTINCT_COLORS.find(c => !usedDistColors.has(c)) || '#94A3B8'
+      }
+      usedDistColors.add(color)
+      distColors[d.name] = color
+    })
 
     // Table data: group by tableGroup level
     const buildGroup = (arr, incArr) => {
@@ -335,7 +382,7 @@ export default function Gastos() {
 
     return {
       kpis: { totalExp, prevTotalExp, yaTotalExp, totalInc, prevTotalInc, yaTotalInc, avgM, totalM, pctInc, prevPctInc, yaPctInc },
-      barData: bData, distData: dData, tableData: tData, chartColors,
+      barData: bData, distData: dData, tableData: tData, chartColors, distColors,
     }
   }, [transactions, currency, period, baseYear, baseMonthIdx, excludeExtra, excludeViajes, filterCats, filterSubs, filterCons, distGroup, tableGroup, catMap, subMap, conMap])
 
@@ -376,10 +423,7 @@ export default function Gastos() {
   const TotalLabel = (props) => {
     const { x, y, width, value } = props
     if (!value || hideNumbers) return null
-    const chartTop = 10
-    const labelY = y - 6 < chartTop ? y + 14 : y - 6
-    const fill = y - 6 < chartTop ? '#fff' : 'var(--text-muted)'
-    return <text x={x + width / 2} y={labelY} textAnchor="middle" fill={fill} fontSize={10} fontFamily="'JetBrains Mono', monospace">{fmtC(value, currency)}</text>
+    return <text x={x + width / 2} y={y - 5} textAnchor="middle" fill="var(--text-secondary)" fontSize={10} fontFamily="'JetBrains Mono', monospace">{fmtC(value, currency)}</text>
   }
 
   const excludedStyle = { background: 'var(--color-expense-bg)', borderColor: 'var(--color-expense-border)', color: 'var(--color-expense-light)', textDecoration: 'line-through' }
@@ -518,7 +562,7 @@ export default function Gastos() {
           <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 16 }}>Evolución mensual</div>
           <div style={{ width: '100%', height: 320 }}>
             <ResponsiveContainer>
-              <ComposedChart data={barData} barCategoryGap="15%">
+              <ComposedChart data={barData} barCategoryGap="15%" margin={{ top: 20, right: 5, bottom: 0, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
                 <XAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={{ stroke: 'var(--border-subtle)' }} tickLine={false} />
                 <YAxis yAxisId="left" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={v => hideNumbers ? '•••' : fmtC(v, currency)} width={60} />
@@ -569,7 +613,7 @@ export default function Gastos() {
                       <span style={{ fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-primary)', fontWeight: 500, fontSize: 11 }}>{H(fmtSmart(d.value, currency))} <span style={{ color: 'var(--text-dim)' }}>({d.pct.toFixed(0)}%)</span></span>
                     </div>
                     <div style={{ width: '100%', height: 6, background: 'var(--bg-tertiary)', borderRadius: 3, overflow: 'hidden' }}>
-                      <div style={{ width: `${d.pct}%`, height: '100%', background: d._isOtros ? '#94a3b8' : (chartColors[d.name] || COLORS[i % COLORS.length]), borderRadius: 3, transition: 'width 0.3s ease' }} />
+                      <div style={{ width: `${d.pct}%`, height: '100%', background: d._isOtros ? '#94a3b8' : (distColors[d.name] || '#94A3B8'), borderRadius: 3, transition: 'width 0.3s ease' }} />
                     </div>
                   </div>
                 ))
