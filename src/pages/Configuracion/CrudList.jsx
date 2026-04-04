@@ -1,7 +1,9 @@
 import { memo, useState } from 'react'
 import { Pencil, ArrowRightLeft, Trash2, ChevronRight, Plus } from 'lucide-react'
+import CategoryIcon from '../../components/CategoryIcon'
+import { ICON_LIST, getIconColor } from '../../lib/categoryIcons'
 
-function CrudList({ items, onAdd, onRename, onMove, onDelete, entityName, onNavigate, moveTargets, moveLabel }) {
+function CrudList({ items, onAdd, onRename, onMove, onDelete, entityName, onNavigate, moveTargets, moveLabel, onChangeIcon }) {
   const [adding, setAdding] = useState(false)
   const [newName, setNewName] = useState('')
   const [editId, setEditId] = useState(null)
@@ -10,6 +12,7 @@ function CrudList({ items, onAdd, onRename, onMove, onDelete, entityName, onNavi
   const [moveTo, setMoveTo] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState(null)
   const [reassignTo, setReassignTo] = useState('')
+  const [pickerOpenId, setPickerOpenId] = useState(null)
 
   const handleAdd = () => { if (!newName.trim()) return; onAdd(newName.trim()); setNewName(''); setAdding(false) }
   const handleRename = () => { if (!editName.trim() || !editId) return; onRename(editId, editName.trim()); setEditId(null) }
@@ -30,14 +33,35 @@ function CrudList({ items, onAdd, onRename, onMove, onDelete, entityName, onNavi
   return (
     <div>
       {items.map(item => (
-        <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 8px', borderRadius: 'var(--radius-sm)', borderBottom: '1px solid var(--border-subtle)' }}
+        <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 8px', borderRadius: 'var(--radius-sm)', borderBottom: '1px solid var(--border-subtle)', position: 'relative' }}
           onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-hover)'}
           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
           {editId === item.id ? (
             <>
-              <input value={editName} onChange={e => setEditName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') setEditId(null) }} style={inputS} autoFocus />
+              {onChangeIcon && (
+                <div style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => setPickerOpenId(pickerOpenId === item.id ? null : item.id)}
+                    style={{ ...btnSm('var(--text-secondary)'), padding: '4px 6px', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-secondary)' }}
+                    title="Cambiar ícono">
+                    <CategoryIcon name={item.icon} size={15} />
+                  </button>
+                  {pickerOpenId === item.id && (
+                    <div style={{ position: 'absolute', top: '110%', left: 0, zIndex: 200, background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.18)', display: 'grid', gridTemplateColumns: 'repeat(6, 32px)', gap: 4 }}>
+                      {ICON_LIST.map(iconName => (
+                        <button key={iconName} onClick={() => { onChangeIcon(item.id, iconName); setPickerOpenId(null) }}
+                          title={iconName}
+                          style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', background: item.icon === iconName ? 'var(--color-accent)' : 'var(--bg-secondary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', color: item.icon === iconName ? '#fff' : 'var(--text-secondary)' }}>
+                          <CategoryIcon name={iconName} size={14} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              <input value={editName} onChange={e => setEditName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') { setEditId(null); setPickerOpenId(null) } }} style={inputS} autoFocus />
               <button onClick={handleRename} style={{ ...btnSm('var(--color-income)'), fontSize: 13, fontWeight: 700 }}>✓</button>
-              <button onClick={() => setEditId(null)} style={{ ...btnSm(), fontSize: 13 }}>✕</button>
+              <button onClick={() => { setEditId(null); setPickerOpenId(null) }} style={{ ...btnSm(), fontSize: 13 }}>✕</button>
             </>
           ) : moveId === item.id ? (
             <>
@@ -51,9 +75,12 @@ function CrudList({ items, onAdd, onRename, onMove, onDelete, entityName, onNavi
             </>
           ) : (
             <>
-              <div style={{ flex: 1, minWidth: 0, cursor: onNavigate ? 'pointer' : 'default' }} onClick={() => onNavigate && onNavigate(item.id)}>
-                <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>{item.icon ? `${item.icon} ` : ''}{item.name}</div>
-                {item.parentName && <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>{item.parentName}</div>}
+              <div style={{ flex: 1, minWidth: 0, cursor: onNavigate ? 'pointer' : 'default', display: 'flex', alignItems: 'center', gap: 8 }} onClick={() => onNavigate && onNavigate(item.id)}>
+                {item.icon && <span style={{ color: getIconColor(item.icon), display: 'flex', alignItems: 'center', flexShrink: 0 }}><CategoryIcon name={item.icon} size={15} /></span>}
+                <div>
+                  <div style={{ fontSize: 13, color: 'var(--text-primary)', fontWeight: 500 }}>{item.name}</div>
+                  {item.parentName && <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>{item.parentName}</div>}
+                </div>
               </div>
               {item.txCount > 0 && <span style={{ fontSize: 10, color: 'var(--text-dim)', fontFamily: "'JetBrains Mono', monospace" }}>{item.txCount} tx</span>}
               <button onClick={() => { setEditId(item.id); setEditName(item.name) }} style={btnSm()} title="Renombrar"><Pencil size={13} /></button>
@@ -92,7 +119,7 @@ function CrudList({ items, onAdd, onRename, onMove, onDelete, entityName, onNavi
                 </div>
                 <select value={reassignTo} onChange={e => setReassignTo(e.target.value)} style={{ ...inputS, width: '100%', marginBottom: 16, flex: 'none' }}>
                   <option value="">Seleccionar destino...</option>
-                  {items.filter(i => i.id !== deleteConfirm.id).map(i => <option key={i.id} value={i.id}>{i.icon ? `${i.icon} ` : ''}{i.name}</option>)}
+                  {items.filter(i => i.id !== deleteConfirm.id).map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
                 </select>
               </>
             ) : (

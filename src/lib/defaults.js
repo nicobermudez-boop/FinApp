@@ -2,7 +2,7 @@ import { supabase } from './supabase'
 
 const DEFAULT_EXPENSE_CATEGORIES = [
   {
-    name: 'Transporte', icon: '🚗', sort_order: 1,
+    name: 'Transporte', icon: 'Car', sort_order: 1,
     subcategories: [
       { name: 'Combustible', concepts: ['YPF', 'Shell', 'Axion'] },
       { name: 'Transporte público', concepts: ['SUBE'] },
@@ -12,7 +12,7 @@ const DEFAULT_EXPENSE_CATEGORIES = [
     ],
   },
   {
-    name: 'Viajes', icon: '✈️', sort_order: 2,
+    name: 'Viajes', icon: 'Plane', sort_order: 2,
     subcategories: [
       { name: 'Alojamiento', concepts: [] },
       { name: 'Pasajes', concepts: [] },
@@ -20,7 +20,7 @@ const DEFAULT_EXPENSE_CATEGORIES = [
     ],
   },
   {
-    name: 'Vivienda', icon: '🏠', sort_order: 3,
+    name: 'Vivienda', icon: 'Home', sort_order: 3,
     subcategories: [
       { name: 'Alquiler', concepts: [] },
       { name: 'Expensas', concepts: [] },
@@ -28,13 +28,13 @@ const DEFAULT_EXPENSE_CATEGORIES = [
     ],
   },
   {
-    name: 'Regalos', icon: '🎁', sort_order: 4,
+    name: 'Regalos', icon: 'Gift', sort_order: 4,
     subcategories: [
       { name: 'Regalos', concepts: [] },
     ],
   },
   {
-    name: 'Hogar y equipamiento', icon: '🛋️', sort_order: 5,
+    name: 'Hogar y equipamiento', icon: 'Armchair', sort_order: 5,
     subcategories: [
       { name: 'Electrodomésticos', concepts: [] },
       { name: 'Muebles', concepts: [] },
@@ -43,7 +43,7 @@ const DEFAULT_EXPENSE_CATEGORIES = [
     ],
   },
   {
-    name: 'Indumentaria y cuidado personal', icon: '👕', sort_order: 6,
+    name: 'Indumentaria y cuidado personal', icon: 'Shirt', sort_order: 6,
     subcategories: [
       { name: 'Ropa', concepts: [] },
       { name: 'Calzado', concepts: [] },
@@ -51,14 +51,14 @@ const DEFAULT_EXPENSE_CATEGORIES = [
     ],
   },
   {
-    name: 'Salud', icon: '🏥', sort_order: 7,
+    name: 'Salud', icon: 'Heart', sort_order: 7,
     subcategories: [
       { name: 'Diagnóstico y tratamiento', concepts: [] },
       { name: 'Obra social', concepts: ['Obra social'] },
     ],
   },
   {
-    name: 'Esparcimiento', icon: '🎬', sort_order: 8,
+    name: 'Esparcimiento', icon: 'Film', sort_order: 8,
     subcategories: [
       { name: 'Streaming', concepts: ['Netflix', 'Spotify', 'Disney+', 'HBO Max'] },
       { name: 'Salidas', concepts: [] },
@@ -66,13 +66,13 @@ const DEFAULT_EXPENSE_CATEGORIES = [
     ],
   },
   {
-    name: 'Educación', icon: '📚', sort_order: 9,
+    name: 'Educación', icon: 'BookOpen', sort_order: 9,
     subcategories: [
       { name: 'Escuela', concepts: [] },
     ],
   },
   {
-    name: 'Compras', icon: '🛒', sort_order: 10,
+    name: 'Compras', icon: 'ShoppingCart', sort_order: 10,
     subcategories: [
       { name: 'Supermercado', concepts: [] },
       { name: 'Compras varias', concepts: [] },
@@ -82,7 +82,7 @@ const DEFAULT_EXPENSE_CATEGORIES = [
 
 const DEFAULT_INCOME_CATEGORIES = [
   {
-    name: 'Ingresos', icon: '💰', sort_order: 1,
+    name: 'Ingresos', icon: 'Wallet', sort_order: 1,
     subcategories: [
       { name: 'Ingresos', concepts: ['Sueldo', 'Rentas', 'Servicios', 'Otros'] },
     ],
