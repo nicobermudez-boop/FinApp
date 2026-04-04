@@ -8,6 +8,7 @@ import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, Legend, ResponsiveContainer
 } from 'recharts'
+import { Plane, Wallet } from 'lucide-react'
 import { SkeletonEvolucion } from '../components/Skeleton'
 import { fmtCompact as fmt, fmtLabel } from '../lib/format'
 
@@ -213,7 +214,7 @@ export default function Evolucion() {
                   ? { background: 'var(--color-expense-bg)', borderColor: 'var(--color-expense-border)', color: 'var(--color-expense-light)', textDecoration: 'line-through' }
                   : { background: 'var(--color-accent-bg)', borderColor: 'rgba(139, 92, 246, 0.3)', color: 'var(--color-accent)' }
                 ),
-              }}>✈️ Viajes</button>
+              }}><Plane size={12} /> Viajes</button>
               <button onClick={() => setExcludeExtra(!excludeExtra)} style={{
                 display: 'inline-flex', alignItems: 'center', gap: 4,
                 padding: '5px 10px', borderRadius: 20, fontSize: 12, fontWeight: 500,
@@ -223,7 +224,7 @@ export default function Evolucion() {
                   ? { background: 'var(--color-expense-bg)', borderColor: 'var(--color-expense-border)', color: 'var(--color-expense-light)', textDecoration: 'line-through' }
                   : { background: 'var(--color-accent-bg)', borderColor: 'rgba(139, 92, 246, 0.3)', color: 'var(--color-accent)' }
                 ),
-              }}>💰 Extras</button>
+              }}><Wallet size={12} /> Extras</button>
             </div>
           </>
         ) : (
@@ -267,7 +268,7 @@ export default function Evolucion() {
                     ? { background: 'var(--color-expense-bg)', borderColor: 'var(--color-expense-border)', color: 'var(--color-expense-light)', textDecoration: 'line-through' }
                     : { background: 'var(--color-accent-bg)', borderColor: 'rgba(139, 92, 246, 0.3)', color: 'var(--color-accent)' }
                   ),
-                }}>✈️ Viajes {excludeViajes && <span style={{ fontSize: 11, opacity: 0.7 }}>✕</span>}</button>
+                }}><Plane size={13} /> Viajes {excludeViajes && <span style={{ fontSize: 11, opacity: 0.7 }}>✕</span>}</button>
                 <button onClick={() => setExcludeExtra(!excludeExtra)} style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6,
                   padding: '5px 14px', borderRadius: 20,
@@ -277,7 +278,7 @@ export default function Evolucion() {
                     ? { background: 'var(--color-expense-bg)', borderColor: 'var(--color-expense-border)', color: 'var(--color-expense-light)', textDecoration: 'line-through' }
                     : { background: 'var(--color-accent-bg)', borderColor: 'rgba(139, 92, 246, 0.3)', color: 'var(--color-accent)' }
                   ),
-                }}>💰 Extraordinarios {excludeExtra && <span style={{ fontSize: 11, opacity: 0.7 }}>✕</span>}</button>
+                }}><Wallet size={13} /> Extraordinarios {excludeExtra && <span style={{ fontSize: 11, opacity: 0.7 }}>✕</span>}</button>
               </div>
             </div>
           </>

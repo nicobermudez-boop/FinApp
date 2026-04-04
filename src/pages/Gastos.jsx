@@ -9,7 +9,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, ComposedChart, Bar, Line, LabelList,
 } from 'recharts'
-import { ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp, Plane, Wallet } from 'lucide-react'
 import CategoryIcon from '../components/CategoryIcon'
 import { getIconColor } from '../lib/categoryIcons'
 import { SkeletonGastos } from '../components/Skeleton'
@@ -411,8 +411,8 @@ export default function Gastos() {
               <select value={baseMonthIdx} onChange={e => setBaseMonthIdx(Number(e.target.value))} style={selectStyle}>
                 {MONTHS_SHORT.map((m, i) => i <= maxMonth || baseYear < now0.getFullYear() ? <option key={i} value={i}>{m}</option> : null)}
               </select>
-              <button onClick={() => setExcludeViajes(!excludeViajes)} style={{ ...excludeBtnStyle(excludeViajes), fontSize: 12, padding: '5px 10px', whiteSpace: 'nowrap' }}>✈️ Viajes</button>
-              <button onClick={() => setExcludeExtra(!excludeExtra)} style={{ ...excludeBtnStyle(excludeExtra), fontSize: 12, padding: '5px 10px', whiteSpace: 'nowrap' }}>💰 Extras</button>
+              <button onClick={() => setExcludeViajes(!excludeViajes)} style={{ ...excludeBtnStyle(excludeViajes), fontSize: 12, padding: '5px 10px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Plane size={12} /> Viajes</button>
+              <button onClick={() => setExcludeExtra(!excludeExtra)} style={{ ...excludeBtnStyle(excludeExtra), fontSize: 12, padding: '5px 10px', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 }}><Wallet size={12} /> Extras</button>
             </div>
           </>
         ) : (
@@ -435,8 +435,8 @@ export default function Gastos() {
                 </select>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => setExcludeViajes(!excludeViajes)} style={excludeBtnStyle(excludeViajes)}>✈️ Viajes</button>
-                <button onClick={() => setExcludeExtra(!excludeExtra)} style={excludeBtnStyle(excludeExtra)}>💰 Extraordinarios</button>
+                <button onClick={() => setExcludeViajes(!excludeViajes)} style={{ ...excludeBtnStyle(excludeViajes), display: 'inline-flex', alignItems: 'center', gap: 6 }}><Plane size={13} /> Viajes</button>
+                <button onClick={() => setExcludeExtra(!excludeExtra)} style={{ ...excludeBtnStyle(excludeExtra), display: 'inline-flex', alignItems: 'center', gap: 6 }}><Wallet size={13} /> Extraordinarios</button>
               </div>
             </div>
           </>
