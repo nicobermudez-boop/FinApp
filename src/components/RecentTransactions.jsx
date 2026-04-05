@@ -1,4 +1,6 @@
 import { fmtForm as fmt } from '../lib/format'
+import CategoryIcon from './CategoryIcon'
+import { getIconColor } from '../lib/categoryIcons'
 
 // RecentTransactions — últimas transacciones con click para repetir
 export default function RecentTransactions({ transactions, onRepeat }) {
@@ -17,7 +19,7 @@ export default function RecentTransactions({ transactions, onRepeat }) {
       {transactions.map(tx => (
         <div key={tx.id} className="ri" onClick={() => onRepeat(tx)} title="Repetir transacción">
           <div className="rl">
-            <span className="rx">{tx.categories?.icon || '💰'}</span>
+            <span className="rx" style={{ color: getIconColor(tx.categories?.icon) }}><CategoryIcon name={tx.categories?.icon || 'Wallet'} size={16} /></span>
             <div className="rn">
               <div className="rc2">
                 {tx.concepts?.name || ''}

@@ -71,7 +71,7 @@ function FilterDrawer({ title, items, selected, onToggle, icon }) {
                 background: on ? 'var(--color-accent-bg)' : 'transparent',
                 color: on ? 'var(--color-accent)' : 'var(--text-muted)',
                 fontSize: 12, fontWeight: on ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit',
-              }}>{item.icon || ''} {item.name}</button>
+              }}><span style={{ color: getIconColor(item.icon) }}><CategoryIcon name={item.icon} size={12} /></span> {item.name}</button>
             )
           })}
         </div>
