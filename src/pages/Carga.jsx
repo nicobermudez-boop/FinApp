@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { usePersistedState } from '../hooks/usePersistedState'
 import { supabase } from '../lib/supabase'
 import { createTransaction, previewTransaction, getRecentTransactions } from '../lib/transactions'
 import { getLatestRate } from '../lib/exchangeRate'
@@ -168,27 +169,33 @@ export default function Carga() {
   const [saving, setSaving] = useState(false)
 
   // Form state
-  const [type, setType] = useState('expense')
-  const [amount, setAmount] = useState('')
-  const [cur, setCur] = useState('ARS')
-  const [date, setDate] = useState(localToday)
-  const [person, setPerson] = useState('')
-  const [catId, setCatId] = useState(null)
-  const [subId, setSubId] = useState(null)
-  const [conId, setConId] = useState(null)
-  const [pay, setPay] = useState('Contado')
-  const [inst, setInst] = useState(1)
-  const [dest, setDest] = useState('')
-  const [incCon, setIncCon] = useState(null)
-  const [incSub, setIncSub] = useState('recurrente')
-  const [desc, setDesc] = useState('')
+  const [type, setType] = usePersistedState('carga-type', 'expense')
+  const [amount, setAmount] = usePersistedState('carga-amount', '')
+  const [cur, setCur] = usePersistedState('carga-cur', 'ARS')
+  const [date, setDate] = usePersistedState('carga-date', localToday)
+  const [person, setPerson] = usePersistedState('carga-person', '')
+  const [catId, setCatId] = usePersistedState('carga-catId', null)
+  const [subId, setSubId] = usePersistedState('carga-subId', null)
+  const [conId, setConId] = usePersistedState('carga-conId', null)
+  const [pay, setPay] = usePersistedState('carga-pay', 'Contado')
+  const [inst, setInst] = usePersistedState('carga-inst', 1)
+  const [dest, setDest] = usePersistedState('carga-dest', '')
+  const [incCon, setIncCon] = usePersistedState('carga-incCon', null)
+  const [incSub, setIncSub] = usePersistedState('carga-incSub', 'recurrente')
+  const [desc, setDesc] = usePersistedState('carga-desc', '')
   const [topDescs, setTopDescs] = useState([])
-  const [isRec, setIsRec] = useState(false)
-  const [rFreq, setRFreq] = useState('monthly')
-  const [rPer, setRPer] = useState(12)
+  const [isRec, setIsRec] = usePersistedState('carga-isRec', false)
+  const [rFreq, setRFreq] = usePersistedState('carga-rFreq', 'monthly')
+  const [rPer, setRPer] = usePersistedState('carga-rPer', 12)
   const [toast, setToast] = useState(null)
   const [toastExit, setToastExit] = useState(false)
   const [saved, setSaved] = useState(false)
+  const PERSISTED_KEYS = useMemo(() => [
+    'carga-type', 'carga-amount', 'carga-cur', 'carga-date', 'carga-person',
+    'carga-catId', 'carga-subId', 'carga-conId', 'carga-pay', 'carga-inst',
+    'carga-dest', 'carga-incCon', 'carga-incSub', 'carga-desc',
+    'carga-isRec', 'carga-rFreq', 'carga-rPer',
+  ], [])
 
   // Preview modal state
   const [preview, setPreview] = useState(null) // { type, items, duplicate }
@@ -317,6 +324,7 @@ export default function Carga() {
   }, [incCon])
 
   const handleRepeat = useCallback((tx) => {
+    // Manually set each state to ensure usePersistedState updates localStorage
     setType(tx.type)
     setAmount(tx.amount.toString())
     setCur(tx.currency)
@@ -347,9 +355,10 @@ export default function Carga() {
 
     window.scrollTo({ top: 0, behavior: 'smooth' })
     setTimeout(() => aRef.current?.focus(), 350)
-  }, [incomeCat])
+  }, [incomeCat, setType, setAmount, setCur, setDate, setPerson, setCatId, setSubId, setConId, setPay, setInst, setDest, setIncCon, setIncSub, setDesc, setIsRec, setRFreq, setRPer])
 
   const reset = useCallback(() => {
+    PERSISTED_KEYS.forEach(key => localStorage.removeItem(key))
     setAmount(''); setCatId(null); setSubId(null); setConId(null)
     setPay('Contado'); setInst(1); setDest('')
     setIncCon(null); setIncSub('recurrente')
@@ -357,7 +366,7 @@ export default function Carga() {
     setDate(localToday())
     setPerson('')
     setTimeout(() => aRef.current?.focus(), 50)
-  }, [])
+  }, [PERSISTED_KEYS])
 
   const valid = useMemo(() => {
     if (!amount || Number(amount) <= 0) return false
@@ -497,9 +506,9 @@ export default function Carga() {
         </div>
         <div className="ttgl" style={{ marginBottom: 12 }}>
           <button className={`tb ${type === 'expense' ? 'ae' : ''}`}
-            onClick={() => { setType('expense'); reset() }}>▼ Gasto</button>
+            onClick={() => setType('expense')}>▼ Gasto</button>
           <button className={`tb ${type === 'income' ? 'ai-on' : ''}`}
-            onClick={() => { setType('income'); reset() }}>▲ Ingreso</button>
+            onClick={() => setType('income')}>▲ Ingreso</button>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <div style={{ flex: 1 }}>
