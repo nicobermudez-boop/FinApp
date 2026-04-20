@@ -295,7 +295,7 @@ function SwipeableNote({ note, isMobile, onToggle, onDelete, onRegister, deletin
         <button
           style={styles.toggleBtn(note.completed)}
           onClick={(e) => { e.stopPropagation(); onToggle(note) }}
-          aria-label={note.completed ? \'Marcar como pendiente\' : \'Marcar como completado\'}
+          aria-label={note.completed ? 'Marcar como pendiente' : 'Marcar como completado'}
         >
           {note.completed && <Check size={12} color="#fff" strokeWidth={4} />}
         </button>
@@ -306,8 +306,8 @@ function SwipeableNote({ note, isMobile, onToggle, onDelete, onRegister, deletin
             onClick={(e) => { e.stopPropagation(); onDelete(note) }}
             disabled={deletingId === note.id}
             aria-label="Eliminar"
-            onMouseEnter={e => e.currentTarget.style.color = \'var(--color-expense)\'}
-            onMouseLeave={e => e.currentTarget.style.color = \'var(--text-muted)\'}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--color-expense)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
           >
             {deletingId === note.id
               ? <Loader2 size={16} className="sb-spin" />
@@ -328,7 +328,7 @@ export default function Pendientes() {
   const [notes, setNotes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [input, setInput] = useState(\'\')
+  const [input, setInput] = useState('')
   const [adding, setAdding] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
   const [undoNote, setUndoNote] = useState(null)
@@ -342,12 +342,12 @@ export default function Pendientes() {
     setLoading(true)
     setError(null)
     const { data, error } = await supabase
-      .from(\'pending_notes\')
-      .select(\'*\')
-      .eq(\'user_id\', user.id)
-      .order(\'created_at\', { ascending: false })
+      .from('pending_notes')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
     if (error) {
-      setError(\'No se pudieron cargar los pendientes.\')
+      setError('No se pudieron cargar los pendientes.')
     } else {
       setNotes(data)
     }
@@ -360,9 +360,9 @@ export default function Pendientes() {
     setAdding(true)
     const optimistic = { id: `opt-${Date.now()}`, text, completed: false, created_at: new Date().toISOString(), user_id: user.id }
     setNotes(prev => [optimistic, ...prev])
-    setInput(\'\')
+    setInput('')
     const { data, error } = await supabase
-      .from(\'pending_notes\')
+      .from('pending_notes')
       .insert({ user_id: user.id, text })
       .select()
       .single()
@@ -379,10 +379,10 @@ export default function Pendientes() {
     const newCompleted = !note.completed
     setNotes(prev => prev.map(n => n.id === note.id ? { ...n, completed: newCompleted } : n))
     const { error } = await supabase
-      .from(\'pending_notes\')
+      .from('pending_notes')
       .update({ completed: newCompleted })
-      .eq(\'id\', note.id)
-      .eq(\'user_id\', user.id)
+      .eq('id', note.id)
+      .eq('user_id', user.id)
     if (error) {
       setNotes(prev => prev.map(n => n.id === note.id ? { ...n, completed: note.completed } : n))
     }
@@ -417,12 +417,12 @@ export default function Pendientes() {
 
   const handleRegister = useCallback(async (note) => {
     // 1. Mark as completed
-    await supabase.from(\'pending_notes\').update({ completed: true }).eq(\'id\', note.id).eq(\'user_id\', user.id)
+    await supabase.from('pending_notes').update({ completed: true }).eq('id', note.id).eq('user_id', user.id)
     // 2. Preload in Carga
     localStorage.setItem('carga-desc', JSON.stringify(note.text))
 
     // 3. Navigate
-    navigate(\'/carga\')
+    navigate('/carga')
   }, [navigate, user.id])
 
   async function handleClearCompleted() {
@@ -430,10 +430,10 @@ export default function Pendientes() {
     if (!completed.length) return
     setNotes(prev => prev.filter(n => !n.completed))
     const { error } = await supabase
-      .from(\'pending_notes\')
+      .from('pending_notes')
       .delete()
-      .eq(\'user_id\', user.id)
-      .eq(\'completed\', true)
+      .eq('user_id', user.id)
+      .eq('completed', true)
     if (error) {
       await loadNotes()
     }
@@ -463,7 +463,7 @@ export default function Pendientes() {
             placeholder="Anotar gasto pendiente..."
             value={input}
             onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === \'Enter\' && handleAdd()}
+            onKeyDown={e => e.key === 'Enter' && handleAdd()}
             disabled={adding}
             autoComplete="off"
           />
@@ -481,7 +481,7 @@ export default function Pendientes() {
         {notes.length > 0 && (
           <div style={styles.statsBar}>
             <span style={styles.statsText}>
-              {pendingCount} pendiente{pendingCount !== 1 ? \'s\' : \'\'}{completedCount > 0 ? ` · ${completedCount} completado${completedCount !== 1 ? \'s\' : \'\'}` : \'\'}
+              {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''}{completedCount > 0 ? ` · ${completedCount} completado${completedCount !== 1 ? 's' : ''}` : ''}
             </span>
             {completedCount > 0 && (
               <button style={styles.clearBtn} onClick={handleClearCompleted}>
@@ -499,7 +499,7 @@ export default function Pendientes() {
             <p style={styles.errorText}>{error}</p>
             <button
               onClick={loadNotes}
-              style={{ fontSize: 13, color: \'var(--color-accent)\', background: \'none\', border: \'none\', cursor: \'pointer\', fontFamily: \'inherit\' }}
+              style={{ fontSize: 13, color: 'var(--color-accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               Reintentar
             </button>
