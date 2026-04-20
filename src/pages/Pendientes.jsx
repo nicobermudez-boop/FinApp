@@ -419,7 +419,8 @@ export default function Pendientes() {
     // 1. Mark as completed
     await supabase.from(\'pending_notes\').update({ completed: true }).eq(\'id\', note.id).eq(\'user_id\', user.id)
     // 2. Preload in Carga
-    localStorage.setItem(\'carga-desc\', note.text)
+    localStorage.setItem('carga-desc', JSON.stringify(note.text))
+
     // 3. Navigate
     navigate(\'/carga\')
   }, [navigate, user.id])
